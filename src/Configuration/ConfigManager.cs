@@ -1,17 +1,31 @@
-﻿namespace Configuration
+﻿using System.Configuration;
+using Configuration.Entities;
+
+namespace Configuration
 {
     public class ConfigManager : IConfiguration
     {
-        private readonly Configuration
+        private readonly ConfigurationFileEditor _editor;
+
+        public ConfigManager(ConfigurationFileEditor editor)
+        {
+            _editor = editor;
+        }
 
         public string GetValueFor(string key)
         {
-            throw new System.NotImplementedException();
+            return ConfigurationManager.AppSettings[key];
         }
 
         public void SetValueFor(string key, string value)
         {
-            throw new System.NotImplementedException();
+            StoreSetting(new KeyValuePair(key, value));
+        }
+
+        private void StoreSetting(KeyValuePair setting)
+        {
+            _editor.WriteSetting(setting);
+            _editor.Save();
         }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
-using Core;
 using Discord.Configuration;
 using Discord.Convertors;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using Core;
 
 namespace Discord
 {

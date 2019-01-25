@@ -13,8 +13,7 @@ namespace Storage
 
         public JsonDataStorage()
         {
-            var resourcesDirectory = Directory
-                .CreateDirectory(_resourcesFolder);
+            Directory.CreateDirectory(_resourcesFolder);
         }
 
         public JsonDataStorage(string resourcesFolder)

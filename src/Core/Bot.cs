@@ -15,6 +15,5 @@ namespace Core
         {
             await _discord.RunAsync();
         }
-
     }
 }

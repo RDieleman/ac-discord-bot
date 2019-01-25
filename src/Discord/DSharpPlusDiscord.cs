@@ -61,7 +61,6 @@ namespace Discord
             {
                 EnableMentionPrefix = true,
                 Dependencies = _dependencyCollection,
-                StringPrefix = "!"
             };
         }
 

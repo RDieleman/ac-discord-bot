@@ -1,13 +1,17 @@
-﻿using System.Threading.Tasks;
+﻿using System.Drawing;
+using System.Threading.Tasks;
 using Discord.Configuration;
 using Discord.Convertors;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using Core;
+using Core.Discord;
+using Core.Entities;
+using DSharpPlus.Entities;
 
 namespace Discord
 {
-    public class DSharpPlusDiscord : IDiscord
+    public class DSharpPlusDiscord : IDiscord, IDiscordMessages
     {
         private DiscordClient _discordClient;
         private CommandsNextModule _commandsNextModule;
@@ -52,7 +56,6 @@ namespace Discord
         {
             var config = GetDefaultCommandsNextConfiguration();
             _commandsNextModule = _discordClient.UseCommandsNext(config);
-            //register commands here
         }
 
         private CommandsNextConfiguration GetDefaultCommandsNextConfiguration()
@@ -74,6 +77,41 @@ namespace Discord
                 LogLevel = LogLevel.Info,
                 UseInternalLogHandler = true
             };
+        }
+
+        public async Task<BotMessage> SendMessage(BotChannel targetChannel, string message = null, BotEmbed embed = null)
+        {
+            var guild = await _discordClient.GetGuildAsync(targetChannel.GuildId);
+            var channel = guild.GetChannel(targetChannel.ChannelId);
+
+            DiscordEmbed discordEmbed = null;
+            if (embed != null)
+                discordEmbed = _entityConvertor.BotEmbedToDiscordEmbed(embed);
+
+            var discordMessage = await channel.SendMessageAsync(null, false, discordEmbed);
+            return _entityConvertor.DiscordMessageToBotMessage(discordMessage);
+        }
+
+        public async Task EditMessage(BotMessage targetMessage, string message = null, BotEmbed embed = null)
+        {
+            var guild = await _discordClient.GetGuildAsync(targetMessage.Channel.GuildId);
+            var channel = guild.GetChannel(targetMessage.Channel.ChannelId);
+            var discordMessage = await channel.GetMessageAsync(targetMessage.MessageId);
+
+            DiscordEmbed discordEmbed = null;
+            if (embed != null)
+                discordEmbed = _entityConvertor.BotEmbedToDiscordEmbed(embed);
+
+            await discordMessage.ModifyAsync(message, discordEmbed);
+        }
+
+        public async Task DeleteMessage(BotMessage targetMessage)
+        {
+            var guild = await _discordClient.GetGuildAsync(targetMessage.Channel.GuildId);
+            var channel = guild.GetChannel(targetMessage.Channel.ChannelId);
+            var discordMessage = await channel.GetMessageAsync(targetMessage.MessageId);
+
+            await discordMessage.DeleteAsync();
         }
     }
 }

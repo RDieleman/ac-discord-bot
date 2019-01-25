@@ -1,12 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Core;
 
 namespace ConsoleApp
 {
     class Program
     {
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
             await InversionOfControl.Container
                 .GetInstance<Bot>()

@@ -10,4 +10,4 @@
   - user_id in Event table should be member_id?
   - active value seems weird to save in db?
   - Event table needs guild id value if using a single database for all guilds
-  
+  - Need to add calendar table (with guild id if using a single database)

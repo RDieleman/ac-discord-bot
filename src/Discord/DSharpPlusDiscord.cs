@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Collections.Generic;
+using System.Drawing;
 using System.Threading.Tasks;
 using Discord.Configuration;
 using Discord.Convertors;
@@ -7,6 +8,10 @@ using DSharpPlus.CommandsNext;
 using Core;
 using Core.Discord;
 using Core.Entities;
+using Core.Services;
+using Core.Storage;
+using Discord.CommandModules;
+using Discord.Entities;
 using DSharpPlus.Entities;
 
 namespace Discord
@@ -18,6 +23,8 @@ namespace Discord
         private DependencyCollection _dependencyCollection;
         private readonly IBotConfiguration _botConfiguration;
         private readonly EntityConvertor _entityConvertor;
+        private readonly IGuildDataAccess _guildData;
+        private readonly ICalendarDataAccess _calendarData;
 
         public DSharpPlusDiscord(IBotConfiguration botConfiguration, EntityConvertor entityConvertor)
         {
@@ -32,8 +39,6 @@ namespace Discord
             await InitializeDiscordClientAsync();
 
             InitializeCommandsNextModuleAsync();
-
-            await Task.Delay(-1);
         }
 
         private void InitializeDependencyCollection()
@@ -41,6 +46,9 @@ namespace Discord
             using (var builder = new DependencyCollectionBuilder())
             {
                 builder.AddInstance(_entityConvertor);
+                builder.AddInstance(new DateTimeService());
+                builder.AddInstance(new GuildService(_guildData));
+                builder.AddInstance(new CalendarService(this, _calendarData, builder.GetDependency<GuildService>()));
                 _dependencyCollection = builder.Build();
             }
         }
@@ -56,6 +64,9 @@ namespace Discord
         {
             var config = GetDefaultCommandsNextConfiguration();
             _commandsNextModule = _discordClient.UseCommandsNext(config);
+
+            //register commands
+            _commandsNextModule.RegisterCommands<CalendarCommand>();
         }
 
         private CommandsNextConfiguration GetDefaultCommandsNextConfiguration()
@@ -79,23 +90,24 @@ namespace Discord
             };
         }
 
-        public async Task<BotMessage> SendMessage(BotChannel targetChannel, string message = null, BotEmbed embed = null)
+        public async Task<BotMessage> SendMessageAsync(BotChannel targetChannel, string message = "", BotEmbed embed = null)
         {
             var guild = await _discordClient.GetGuildAsync(targetChannel.GuildId);
             var channel = guild.GetChannel(targetChannel.ChannelId);
 
             DiscordEmbed discordEmbed = null;
             if (embed != null)
+            {
                 discordEmbed = _entityConvertor.BotEmbedToDiscordEmbed(embed);
+            }
 
-            var discordMessage = await channel.SendMessageAsync(null, false, discordEmbed);
+            var discordMessage = await channel.SendMessageAsync(message, false, discordEmbed);
             return _entityConvertor.DiscordMessageToBotMessage(discordMessage);
         }
 
-        public async Task EditMessage(BotMessage targetMessage, string message = null, BotEmbed embed = null)
+        public async Task EditMessageAsync(BotMessage targetMessage, string message = null, BotEmbed embed = null)
         {
-            var guild = await _discordClient.GetGuildAsync(targetMessage.Channel.GuildId);
-            var channel = guild.GetChannel(targetMessage.Channel.ChannelId);
+            var channel = await _discordClient.GetChannelAsync(targetMessage.ChannelId);
             var discordMessage = await channel.GetMessageAsync(targetMessage.MessageId);
 
             DiscordEmbed discordEmbed = null;
@@ -105,10 +117,9 @@ namespace Discord
             await discordMessage.ModifyAsync(message, discordEmbed);
         }
 
-        public async Task DeleteMessage(BotMessage targetMessage)
+        public async Task DeleteMessageAsync(BotMessage targetMessage)
         {
-            var guild = await _discordClient.GetGuildAsync(targetMessage.Channel.GuildId);
-            var channel = guild.GetChannel(targetMessage.Channel.ChannelId);
+            var channel = await _discordClient.GetChannelAsync(targetMessage.ChannelId);
             var discordMessage = await channel.GetMessageAsync(targetMessage.MessageId);
 
             await discordMessage.DeleteAsync();

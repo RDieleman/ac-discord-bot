@@ -3,12 +3,12 @@
     public class BotMessage
     {
         public ulong MessageId { get; }
-        public BotChannel Channel { get; }
+        public ulong ChannelId { get; }
 
-        public BotMessage(ulong messageId, BotChannel channel)
+        public BotMessage(ulong messageId, ulong channelId)
         {
             MessageId = messageId;
-            Channel = channel;
+            ChannelId = channelId;
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Discord.Convertors
         public BotMessage DiscordMessageToBotMessage(DiscordMessage message)
         {
             var channel = DiscordChannelToBotChannel(message.Channel);
-            return new BotMessage(message.Id, channel);
+            return new BotMessage(message.Id, channel.ChannelId);
         }
 
         public BotChannel DiscordChannelToBotChannel(DiscordChannel discordChannel)

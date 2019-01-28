@@ -1,5 +1,6 @@
 ﻿using Configuration;
 using Core;
+using Core.Discord;
 using Core.Storage;
 using Discord;
 using Discord.Configuration;
@@ -29,9 +30,11 @@ namespace ConsoleApp
             _container = new Container(c =>
             {
                 c.ForSingletonOf<IDiscord>().UseIfNone<DSharpPlusDiscord>();
+                c.ForSingletonOf<IDiscordMessages>().UseIfNone<DSharpPlusDiscord>();
                 c.ForSingletonOf<IBotConfiguration>().UseIfNone<BotConfiguration>();
                 c.ForSingletonOf<IConfiguration>().UseIfNone<ConfigManager>();
-                c.ForSingletonOf<IDataStorage>().UseIfNone<JsonDataStorage>();
+                c.ForSingletonOf<ICalendarDataAccess>().UseIfNone<DatabaseCalendarDataAccess>();
+                c.ForSingletonOf<IGuildDataAccess>().UseIfNone<DatabaseGuildDataAccess>();
             });
         }
 

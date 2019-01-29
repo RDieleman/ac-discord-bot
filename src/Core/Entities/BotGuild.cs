@@ -20,11 +20,11 @@ namespace Core.Entities
         }
 
 
-        public BotGuild(ulong guildId, IEnumerable<Calendar> calendars, IEnumerable<Event> events)
+        public BotGuild(ulong guildId, IEnumerable<Calendar> calendars = null, IEnumerable<Event> events = null)
         {
             GuildId = guildId;
-            _calendars = new List<Calendar>(calendars);
-            _events = new List<Event>(events);
+            _calendars = calendars?.ToList() ?? new List<Calendar>();
+            _events = events?.ToList() ?? new List<Event>();
         }
     }
 }

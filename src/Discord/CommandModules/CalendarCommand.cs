@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Core.Entities;
 using Core.Services;
 using Discord.Convertors;
@@ -11,6 +12,7 @@ namespace Discord.CommandModules
     public class CalendarCommand
     {
         private readonly CalendarService _service;
+
         private readonly EntityConvertor _convertor;
 
         public CalendarCommand(CalendarService service, EntityConvertor convertor)
@@ -21,16 +23,45 @@ namespace Discord.CommandModules
 
         [Command("new")]
         public async Task CreateCalendar(CommandContext context)
-        {           
-            //todo: implement question for offset
-
-            await _service.CreateCalendarAsync(_convertor.DiscordMessageToBotMessage(context.Message), 0);
+        {
+            try
+            {
+                //todo: implement question for offset
+                var guild = await _convertor.DiscordGuildToBotGuild(context.Guild);
+                var channel = _convertor.DiscordChannelToBotChannel(context.Channel);
+                await _service.CreateCalendarAsync(guild, channel, 0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
 
         [Command("update")]
-        public async Task UpdateCalendar(BotGuild guild)
+        public async Task UpdateCalendar(CommandContext context)
         {
-            await _service.UpdateGuildCalendars(guild);
+            try
+            {
+                var guild = await _convertor.DiscordGuildToBotGuild(context.Guild);
+                await _service.UpdateGuildCalendars(guild);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
+        [Command("updateall")]
+        public async Task UpdateCalendars(CommandContext context)
+        {
+            try
+            {
+                await _service.UpdateCalendarsAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
     }
 }

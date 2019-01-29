@@ -11,15 +11,15 @@ namespace Core.Services
 {
     public class CalendarService
     {
-        private readonly IDiscordMessages _discord;
+        private readonly IDiscordMessages _discordMessages;
+        private readonly IDiscordGuilds _discordGuilds;
         private readonly ICalendarDataAccess _calendarData;
-        private readonly GuildService _guildService;
 
-        public CalendarService(IDiscordMessages discord, ICalendarDataAccess calendarData, GuildService guildService)
+        public CalendarService(IDiscordMessages discordMessages, ICalendarDataAccess calendarData, IDiscordGuilds discordGuilds)
         {
-            _discord = discord;
+            _discordMessages = discordMessages;
             _calendarData = calendarData;
-            _guildService = guildService;
+            _discordGuilds = discordGuilds;
         }
 
         public async Task UpdateCalendarsAsync()
@@ -29,7 +29,7 @@ namespace Core.Services
              * Start an update task for every guild
              */
 
-            var guilds = await _guildService.GetAllGuildsAsync();
+            var guilds = await _discordGuilds.GetGuildsAsync();
 
             var updates = new List<Task<IEnumerable<Task>>>();
 
@@ -40,13 +40,12 @@ namespace Core.Services
         }
 
 
-        public async Task CreateCalendarAsync(BotChannel channel, int utcOffset)
+        public async Task CreateCalendarAsync(BotGuild guild, BotChannel channel, int utcOffset)
         {
-            var guild = await _guildService.GetGuildAsync(channel.GuildId);
             var embed = CreateCalendarEmbed(guild.GetEvents(), utcOffset);
-            var message = await _discord.SendMessageAsync(channel, string.Empty, embed);
+            var message = await _discordMessages.SendMessageAsync(channel, string.Empty, embed);
             var calendar = new Calendar(message, utcOffset);
-            await _calendarData.AddCalendar(calendar);
+            await _calendarData.AddCalendar(guild.GuildId, calendar);
         }
 
         public async Task<IEnumerable<Task>> UpdateGuildCalendars(BotGuild guild)
@@ -73,6 +72,7 @@ namespace Core.Services
                     if (!(update.Exception is null))
                     {
                         //todo: handle exceptions
+                        Console.WriteLine(update.Exception);
                     }
                 }
             }
@@ -83,7 +83,7 @@ namespace Core.Services
         private async Task UpdateCalendar(Calendar calendar, IEnumerable<Event> events)
         {
             var embed = CreateCalendarEmbed(events, calendar.UtcOffset);
-            await _discord.EditMessageAsync(calendar.Message, string.Empty, embed);
+            await _discordMessages.EditMessageAsync(calendar.Message, string.Empty, embed);
         }
 
         private BotEmbed CreateCalendarEmbed(IEnumerable<Event> events, int utcOffset)

@@ -35,7 +35,7 @@ namespace Core.Entities.Timers
 
             _loopingTimer = new Timer
             {
-                Interval = 4000, //todo: change this TimeSpan.FromMinutes(15).TotalMilliseconds,
+                Interval = 10000, //todo: change this TimeSpan.FromMinutes(15).TotalMilliseconds,
                 AutoReset = true,
                 Enabled = false
             };
@@ -45,7 +45,7 @@ namespace Core.Entities.Timers
             var syncTimer = new Timer
             {
                 AutoReset = false,
-                Interval = 4000 //todo: change this waitTime.TotalMilliseconds,
+                Interval = 10000 //todo: change this waitTime.TotalMilliseconds,
             };
 
             syncTimer.Elapsed += (sender, e) =>
@@ -59,15 +59,6 @@ namespace Core.Entities.Timers
         private async void UpdateCalendars(object sender, ElapsedEventArgs e)
         {
             await _service.UpdateCalendarsAsync();
-            // _discord.SendMessageAsync(new BotChannel(537709449314304040, 512271618224029702), "update calendars");
-
-            /*
-             * 1. get all clans
-             * 2. get all calendars per clan
-             * 3. get all events per clan
-             * 4. create calendar embed per clan
-             * 5. update calendar messages per clan
-             */
         }
     }
 }

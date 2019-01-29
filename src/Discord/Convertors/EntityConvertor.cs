@@ -1,11 +1,22 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Core.Entities;
+using Core.Storage;
 using DSharpPlus.Entities;
 
 namespace Discord.Convertors
 {
     public class EntityConvertor
     {
+        private readonly ICalendarDataAccess _calendarData;
+        private readonly IEventDataAccess _eventData;
+
+        public EntityConvertor(ICalendarDataAccess calendarData, IEventDataAccess eventData)
+        {
+            _calendarData = calendarData;
+            _eventData = eventData;
+        }
+
         public DiscordEmbed BotEmbedToDiscordEmbed(BotEmbed embed)
         {
             var builder = new DiscordEmbedBuilder();
@@ -48,7 +59,16 @@ namespace Discord.Convertors
 
         public BotChannel DiscordChannelToBotChannel(DiscordChannel discordChannel)
         {
-            return new BotChannel(discordChannel.Id, discordChannel.GuildId);
+            return new BotChannel(discordChannel.GuildId, discordChannel.Id);
         }
+
+        public async Task<BotGuild> DiscordGuildToBotGuild(DiscordGuild guild)
+        {
+            var events = await _eventData.GetGuildEventsAsync(guild.Id);
+            var calendars = await _calendarData.GetCalendarsFromGuild(guild.Id);
+
+            return new BotGuild(guild.Id, calendars, events);
+        }
+            
     }
 }

@@ -6,12 +6,10 @@ namespace Core.Storage
 {
     public interface ICalendarDataAccess
     {
-        Task<IEnumerable<Calendar>> GetAllCalendars();
-
         Task<IEnumerable<Calendar>> GetCalendarsFromGuild(ulong guildId);
 
-        Task AddCalendar(Calendar calendar);
+        Task AddCalendar(ulong guildId, Calendar calendar);
 
-        Task DeleteCalendar(int calendarId);
+        Task DeleteCalendar(ulong guildId, Calendar calendar);
     }
 }

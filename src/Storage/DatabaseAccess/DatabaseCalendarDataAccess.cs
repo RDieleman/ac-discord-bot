@@ -7,22 +7,17 @@ namespace Storage
 {
     public class DatabaseCalendarDataAccess : ICalendarDataAccess
     {
-        public Task<IEnumerable<Calendar>> GetAllCalendars()
-        {
-            throw new System.NotImplementedException();
-        }
-
         public Task<IEnumerable<Calendar>> GetCalendarsFromGuild(ulong guildId)
         {
             throw new System.NotImplementedException();
         }
 
-        public Task AddCalendar(Calendar calendar)
+        public Task AddCalendar(ulong guildId, Calendar calendar)
         {
             throw new System.NotImplementedException();
         }
 
-        public Task DeleteCalendar(int calendarId)
+        public Task DeleteCalendar(ulong guildId, Calendar calendar)
         {
             throw new System.NotImplementedException();
         }

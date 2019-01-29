@@ -6,6 +6,7 @@ using Discord;
 using Discord.Configuration;
 using Lamar;
 using Storage;
+using Storage.JsonAccess;
 
 namespace ConsoleApp
 {
@@ -31,10 +32,11 @@ namespace ConsoleApp
             {
                 c.ForSingletonOf<IDiscord>().UseIfNone<DSharpPlusDiscord>();
                 c.ForSingletonOf<IDiscordMessages>().UseIfNone<DSharpPlusDiscord>();
+                c.ForSingletonOf<IDiscordGuilds>().UseIfNone<DSharpPlusDiscord>();
                 c.ForSingletonOf<IBotConfiguration>().UseIfNone<BotConfiguration>();
                 c.ForSingletonOf<IConfiguration>().UseIfNone<ConfigManager>();
-                c.ForSingletonOf<ICalendarDataAccess>().UseIfNone<DatabaseCalendarDataAccess>();
-                c.ForSingletonOf<IGuildDataAccess>().UseIfNone<DatabaseGuildDataAccess>();
+                c.ForSingletonOf<ICalendarDataAccess>().UseIfNone<JsonCalendarDataAccess>();
+                c.ForSingletonOf<IEventDataAccess>().UseIfNone<JsonEventDataAccess>();
             });
         }
 

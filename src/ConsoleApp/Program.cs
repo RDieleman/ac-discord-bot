@@ -10,6 +10,8 @@ namespace ConsoleApp
             await InversionOfControl.Container
                 .GetInstance<Bot>()
                 .RunAsync();
+
+            await Task.Delay(-1);
         }
     }
 }

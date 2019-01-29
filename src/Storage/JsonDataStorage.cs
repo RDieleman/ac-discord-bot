@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Core.Storage;
 using Newtonsoft.Json;
 
 namespace Storage
 {
-    public class JsonDataStorage : IDataStorage
+    public class JsonDataStorage
     {
-        private readonly string _resourcesFolder = "Resources";
+        private readonly string _resourcesFolder = @"C:/ACBOT/Resources";
         private const string FileTemplate = "{0}.json";
 
         public JsonDataStorage()
@@ -34,6 +33,12 @@ namespace Storage
             File.WriteAllText(filePath, json);
         }
 
+        public void DeleteObject(string collection, string key)
+        {
+            var file = GetFileNameByKey(key);
+            File.Delete(string.Concat(collection, "/", file));
+        }
+
         public T RestoreObject<T>(string collection, string key)
         {
             var file = GetFileNameByKey(key);
@@ -50,7 +55,7 @@ namespace Storage
             var files = new HashSet<T>();
             foreach (var filePath in filePaths)
             {
-                var fileName = Path.GetFileName(filePath);
+                var fileName = Path.GetFileNameWithoutExtension(filePath);
                 var file = RestoreObject<T>(collection, fileName);
                 files.Add(file);
             }

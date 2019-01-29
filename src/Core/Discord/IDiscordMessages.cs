@@ -5,8 +5,8 @@ namespace Core.Discord
 {
     public interface IDiscordMessages
     {
-        Task<BotMessage> SendMessage(BotChannel targetChannel, string message = null, BotEmbed embed = null);
-        Task EditMessage(BotMessage targetMessage, string message = null, BotEmbed embed = null);
-        Task DeleteMessage(BotMessage targetMessage);
+        Task<BotMessage> SendMessageAsync(BotChannel targetChannel, string message = null, BotEmbed embed = null);
+        Task EditMessageAsync(BotMessage targetMessage, string message = null, BotEmbed embed = null);
+        Task DeleteMessageAsync(BotMessage targetMessage);
     }
 }

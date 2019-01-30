@@ -10,6 +10,7 @@ using DSharpPlus.CommandsNext;
 using Core;
 using Core.Discord;
 using Core.Entities;
+using Core.Entities.Timers;
 using Core.Services;
 using Core.Storage;
 using Discord.CommandModules;
@@ -28,6 +29,8 @@ namespace Discord
         private readonly DataAccess _dataAccess;
         private readonly IBotConfiguration _botConfiguration;
 
+        private readonly List<ITimer> _timers = new List<ITimer>();
+
         public DSharpPlusDiscord(IBotConfiguration botConfiguration,  EntityConvertor entityConvertor, DataAccess dataAccess)
         {
             _botConfiguration = botConfiguration;
@@ -42,6 +45,8 @@ namespace Discord
             await InitializeDiscordClientAsync();
 
             InitializeCommandsNextModuleAsync();
+
+            InitializeTimers();
         }
 
         private void InitializeDependencyCollection()
@@ -69,6 +74,12 @@ namespace Discord
 
             //register commands
             _commandsNextModule.RegisterCommands<CalendarCommand>();
+        }
+
+        public void InitializeTimers()
+        {
+            _timers.Add(new CalendarTimer(_dependencyCollection.GetDependency<CalendarService>()));
+            _timers.ForEach(x => x.Start());
         }
 
         private CommandsNextConfiguration GetDefaultCommandsNextConfiguration()

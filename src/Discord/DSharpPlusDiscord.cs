@@ -25,16 +25,14 @@ namespace Discord
         private DependencyCollection _dependencyCollection;
 
         private readonly EntityConvertor _entityConvertor;
+        private readonly DataAccess _dataAccess;
         private readonly IBotConfiguration _botConfiguration;
-        private readonly ICalendarDataAccess _calendarData;
-        private readonly IEventDataAccess _eventData;
 
-        public DSharpPlusDiscord(IBotConfiguration botConfiguration, IEventDataAccess eventData, ICalendarDataAccess calendarData, EntityConvertor entityConvertor)
+        public DSharpPlusDiscord(IBotConfiguration botConfiguration,  EntityConvertor entityConvertor, DataAccess dataAccess)
         {
             _botConfiguration = botConfiguration;
             _entityConvertor = entityConvertor;
-            _eventData = eventData;
-            _calendarData = calendarData;
+            _dataAccess = dataAccess;
         }
 
         public async Task RunAsync()
@@ -52,7 +50,7 @@ namespace Discord
             {
                 builder.AddInstance(_entityConvertor);
                 builder.AddInstance(new DateTimeService());
-                builder.AddInstance(new CalendarService(this, _calendarData, this));
+                builder.AddInstance(new CalendarService(this, _dataAccess.CalendarData, this));
                 _dependencyCollection = builder.Build();
             }
         }

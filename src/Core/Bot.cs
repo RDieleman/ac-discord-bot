@@ -13,16 +13,16 @@ namespace Core
         private readonly IDiscord _discord;
         private readonly IDiscordMessages _discordMessages;
         private readonly IDiscordGuilds _discordGuilds;
-        private readonly ICalendarDataAccess _calendarData;
+        private readonly DataAccess _dataAccess;
 
         private readonly List<ITimer> _timers = new List<ITimer>();
 
-        public Bot(IDiscord discord, ICalendarDataAccess calendarData)
+        public Bot(IDiscord discord, DataAccess dataAccess)
         {
             _discord = discord;
             _discordMessages = discord as IDiscordMessages;
-            _discordGuilds = discord as IDiscordGuilds;           
-            _calendarData = calendarData;
+            _discordGuilds = discord as IDiscordGuilds;
+            _dataAccess = dataAccess;
         }
 
         public async Task RunAsync()
@@ -33,7 +33,7 @@ namespace Core
 
         public void InitializeTimers()
         {
-            _timers.Add(new CalendarTimer(new CalendarService(_discordMessages, _calendarData, _discordGuilds)));
+            _timers.Add(new CalendarTimer(new CalendarService(_discordMessages, _dataAccess.CalendarData, _discordGuilds)));
             _timers.ForEach(x => x.Start());
         }
     }

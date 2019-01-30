@@ -35,7 +35,7 @@ namespace Core.Entities.Timers
 
             _loopingTimer = new Timer
             {
-                Interval = 10000, //todo: change this TimeSpan.FromMinutes(15).TotalMilliseconds,
+                Interval = TimeSpan.FromMinutes(15).TotalMilliseconds,
                 AutoReset = true,
                 Enabled = false
             };
@@ -45,7 +45,7 @@ namespace Core.Entities.Timers
             var syncTimer = new Timer
             {
                 AutoReset = false,
-                Interval = 10000 //todo: change this waitTime.TotalMilliseconds,
+                Interval = waitTime.TotalMilliseconds,                
             };
 
             syncTimer.Elapsed += (sender, e) =>

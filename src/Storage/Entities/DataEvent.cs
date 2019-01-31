@@ -13,7 +13,6 @@ namespace Storage.Entities
         public DateTime start_date { get; set; }
         public DateTime end_date { get; set; }
         public DateTimeOffset deleted_at { get; set; }
-        public string discord_id { get; set; }
-        public ulong guild_id { get; set; } = 512271618224029702; //todo: GET ID FROM DATABASE
+        public string name { get; set; }
     }
 }

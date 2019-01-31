@@ -68,19 +68,9 @@ namespace Core.Services
 
             var updateTasks = new List<Task>();
 
-            var events = new Dictionary<Event, BotMember>();
-
-            var leaders = (await GetEventLeadersAsync(guild.GuildId, guild.GetEvents())).ToList();
-
-            foreach (var @event in guild.GetEvents())
-            {
-                var leader = leaders.FirstOrDefault(x => x.Id == @event.LeaderDiscordId);
-                events.Add(@event, leader);
-            }
-
             foreach (var calendar in guild.GetCalendars())
             {
-                updateTasks.Add(UpdateCalendar(calendar, events.AsEnumerable()));
+                updateTasks.Add(UpdateCalendar(calendar, guild.GetEvents()));
             }
 
             try
@@ -102,7 +92,7 @@ namespace Core.Services
             return updateTasks.AsEnumerable();
         }
 
-        private async Task UpdateCalendar(Calendar calendar, IEnumerable<KeyValuePair<Event, BotMember>> events)
+        private async Task UpdateCalendar(Calendar calendar, IEnumerable<Event> events)
         {
             var embed = CreateCalendarEmbed(calendar, events, calendar.UtcOffset);
 
@@ -118,7 +108,7 @@ namespace Core.Services
             }
         }
 
-        private BotEmbed CreateCalendarEmbed(Calendar calendar, IEnumerable<KeyValuePair<Event, BotMember>> events, int utcOffset)
+        private BotEmbed CreateCalendarEmbed(Calendar calendar, IEnumerable<Event> events, int utcOffset)
         {
             var now = DateTime.UtcNow.AddHours(utcOffset);
 
@@ -137,16 +127,19 @@ namespace Core.Services
             {
                 var dayDate = now.Date.AddDays(i);
 
-                var offsetEvents = new Dictionary<Event, BotMember>();
+                var offsetEvents = new List<Event>();
+
                 foreach (var @event in events)
                 {
-                    var startDateTime = @event.Key.StartDateTime.ToUniversalTime().AddHours(utcOffset);
+
+                    var startDateTime = @event.StartDateTime.ToUniversalTime().AddHours(utcOffset);
+                    var endDateTime = @event.EndDateTime.ToUniversalTime().AddHours(utcOffset);
 
                     //add event to day
-                    if (dayDate.Equals(startDateTime.Date))
+                    if (dayDate.CompareTo(startDateTime.Date) >= 0 && dayDate.CompareTo(endDateTime.Date) <= 0)
                     {
-                        offsetEvents.Add(new Event(@event.Key.Id, @event.Key.LeaderDiscordId, @event.Key.Name, @event.Key.Active,
-                            startDateTime, @event.Key.EndDateTime.ToUniversalTime().AddHours(utcOffset)), @event.Value);
+                        offsetEvents.Add(new Event(@event.Id, @event.LeaderName, @event.Name, @event.Active,
+                            startDateTime, @event.EndDateTime.ToUniversalTime().AddHours(utcOffset)));
                     }
                 }
 
@@ -197,7 +190,7 @@ namespace Core.Services
 
             foreach (var @event in day.Events)
             {
-                var content = FormatEvent(@event.Key, day.Date, @event.Value, descriptionLength);
+                var content = FormatEvent(@event, day.Date);
                 if (content.Length + descriptionLength >= 1900) break;
                 eventString.Add(content);
                 descriptionLength += content.Length;
@@ -223,13 +216,8 @@ namespace Core.Services
             }
         }
 
-        private string FormatEvent(Event @event, DateTime dayDate, BotMember leader, int descriptionLength)
+        private string FormatEvent(Event @event, DateTime dayDate)
         {
-            var leaderName = leader?.DisplayName ?? 
-                             leader?.Nickname ??
-                             leader?.Username ?? 
-                             "unknown";
-
             //todo: implement all day events if needed
             //started
             if (@event.StartDateTime.Date.CompareTo(dayDate.Date) < 0)
@@ -237,12 +225,12 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"Ends on {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {leaderName}]";
+                    return $"Ends on {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {leaderName}]";
+                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
             }
             else
@@ -250,47 +238,47 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {leaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {leaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
             }
         }
 
-        private async Task<IEnumerable<BotMember>> GetEventLeadersAsync(ulong guildId, IEnumerable<Event> events)
-        {
-            var leaders = new List<BotMember>();
-            var leadersNotFound = new List<ulong>();
-            foreach (var @event in events)
-            {
-                var found = false;
+        //private async Task<IEnumerable<BotMember>> GetEventLeadersAsync(ulong guildId, IEnumerable<Event> events)
+        //{
+        //    var leaders = new List<BotMember>();
+        //    var leadersNotFound = new List<ulong>();
+        //    foreach (var @event in events)
+        //    {
+        //        var found = false;
 
-                if(leadersNotFound.Contains(@event.LeaderDiscordId)) continue;
+        //        if(leadersNotFound.Contains(@event.LeaderDiscordId)) continue;
 
-                foreach (var botMember in leaders)
-                {
-                    if (botMember.Id == @event.LeaderDiscordId)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
+        //        foreach (var botMember in leaders)
+        //        {
+        //            if (botMember.Id == @event.LeaderDiscordId)
+        //            {
+        //                found = true;
+        //                break;
+        //            }
+        //        }
 
-                if (found) continue;
-                try
-                {
-                    leaders.Add(await _discordMembers.GetBotGuildMember(guildId, @event.LeaderDiscordId));
-                }
-                catch
-                {
-                    leadersNotFound.Add(@event.LeaderDiscordId);
-                }
-            }
+        //        if (found) continue;
+        //        try
+        //        {
+        //            leaders.Add(await _discordMembers.GetBotGuildMember(guildId, @event.LeaderDiscordId));
+        //        }
+        //        catch
+        //        {
+        //            leadersNotFound.Add(@event.LeaderDiscordId);
+        //        }
+        //    }
 
-            return leaders.AsEnumerable();
-        }
+        //    return leaders.AsEnumerable();
+        //}
     }
 }

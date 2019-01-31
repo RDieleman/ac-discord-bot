@@ -6,9 +6,9 @@ namespace Core.Entities.Calendars
     public class Day
     {
         public DateTime Date { get; }
-        public IEnumerable<KeyValuePair<Event, BotMember>> Events { get; }
+        public IEnumerable<Event> Events { get; }
 
-        public Day(DateTime date, IEnumerable<KeyValuePair<Event, BotMember>> events)
+        public Day(DateTime date, IEnumerable<Event> events)
         {
             Date = date;
             Events = events;

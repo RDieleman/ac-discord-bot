@@ -10,7 +10,7 @@ namespace Storage.Convertors
     public class DataEntityConvertor
     {
         public Event DataEventToEvent(DataEvent dataEvent)
-            => new Event(dataEvent.id, StringDiscordIdToUlongDiscordId(dataEvent.discord_id), dataEvent.event_name, dataEvent.active, dataEvent.start_date, dataEvent.end_date);
+            => new Event(dataEvent.id, dataEvent.name, dataEvent.event_name, dataEvent.active, dataEvent.start_date, dataEvent.end_date);
 
         public Calendar DataCalendarToCalendar(DataCalendar calendar)
         {            

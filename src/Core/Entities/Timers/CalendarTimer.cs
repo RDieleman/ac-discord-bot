@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using System.Timers;
 using Core.Services;
-using Discord.Entities;
 
 namespace Core.Entities.Timers
 {
@@ -58,6 +57,7 @@ namespace Core.Entities.Timers
 
         private async void UpdateCalendars(object sender, ElapsedEventArgs e)
         {
+            //todo: add exception handling
             await _service.UpdateCalendarsAsync();
         }
     }

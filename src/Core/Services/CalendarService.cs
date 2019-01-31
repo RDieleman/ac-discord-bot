@@ -149,7 +149,7 @@ namespace Core.Services
             var embed = new BotEmbed
             {
                 Title = $":calendar_spiral: {calendar.Name.ToUpper()}",
-                Url = new Uri("https://www.rs-ac.com"),
+                Url = new Uri("https://www.rs-ac.com"), //todo: edit this
                 Footer = new BotFooter(
                     $"Last synched with the clan's calendar on {now.ToString("dddd MMMM d")} at {now.ToString("t")} (UTC{timezone})."),
                 ColorHex = calendar.ColorHex,

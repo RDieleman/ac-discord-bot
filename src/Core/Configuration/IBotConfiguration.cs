@@ -1,4 +1,4 @@
-﻿namespace Discord.Configuration
+﻿namespace Core.Configuration
 {
     public interface IBotConfiguration
     {

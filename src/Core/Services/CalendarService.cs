@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Core.Discord;
@@ -14,12 +15,14 @@ namespace Core.Services
         private readonly IDiscordMessages _discordMessages;
         private readonly IDiscordGuilds _discordGuilds;
         private readonly ICalendarDataAccess _calendarData;
+        private readonly IDiscordMembers _discordMembers;
 
-        public CalendarService(IDiscordMessages discordMessages, ICalendarDataAccess calendarData, IDiscordGuilds discordGuilds)
+        public CalendarService(IDiscordMessages discordMessages, ICalendarDataAccess calendarData, IDiscordGuilds discordGuilds, IDiscordMembers discordMembers)
         {
             _discordMessages = discordMessages;
             _calendarData = calendarData;
             _discordGuilds = discordGuilds;
+            _discordMembers = discordMembers;
         }
 
         public async Task UpdateCalendarsAsync()
@@ -39,14 +42,23 @@ namespace Core.Services
             }
         }
 
+        //public async Task CreateCalendarAsync(BotGuild guild, BotChannel channel, int utcOffset)
+        //{
+        //    var events = new Dictionary<Event, BotMember>();
 
-        public async Task CreateCalendarAsync(BotGuild guild, BotChannel channel, int utcOffset)
-        {
-            var embed = CreateCalendarEmbed(guild.GetEvents(), utcOffset);
-            var message = await _discordMessages.SendMessageAsync(channel, string.Empty, embed);
-            var calendar = new Calendar(message, utcOffset);
-            await _calendarData.AddCalendar(guild.GuildId, calendar);
-        }
+        //    var leaders = (await GetEventLeadersAsync(guild.GuildId, guild.GetEvents())).ToList();
+
+        //    foreach (var @event in guild.GetEvents())
+        //    {
+        //        var leader = leaders.FirstOrDefault(x => x.Id == @event.LeaderDiscordId);
+        //        events.Add(@event, leader);
+        //    }
+
+        //    var embed = CreateCalendarEmbed(events, utcOffset);
+        //    var message = await _discordMessages.SendMessageAsync(channel, string.Empty, embed);
+        //    var calendar = new Calendar(message, utcOffset);
+        //    await _calendarData.AddCalendar(guild.GuildId, calendar);
+        //}
 
         public async Task<IEnumerable<Task>> UpdateGuildCalendars(BotGuild guild)
         {
@@ -56,9 +68,19 @@ namespace Core.Services
 
             var updateTasks = new List<Task>();
 
+            var events = new Dictionary<Event, BotMember>();
+
+            var leaders = (await GetEventLeadersAsync(guild.GuildId, guild.GetEvents())).ToList();
+
+            foreach (var @event in guild.GetEvents())
+            {
+                var leader = leaders.FirstOrDefault(x => x.Id == @event.LeaderDiscordId);
+                events.Add(@event, leader);
+            }
+
             foreach (var calendar in guild.GetCalendars())
             {
-                updateTasks.Add(UpdateCalendar(calendar, guild.GetEvents()));
+                updateTasks.Add(UpdateCalendar(calendar, events.AsEnumerable()));
             }
 
             try
@@ -80,13 +102,23 @@ namespace Core.Services
             return updateTasks.AsEnumerable();
         }
 
-        private async Task UpdateCalendar(Calendar calendar, IEnumerable<Event> events)
+        private async Task UpdateCalendar(Calendar calendar, IEnumerable<KeyValuePair<Event, BotMember>> events)
         {
-            var embed = CreateCalendarEmbed(events, calendar.UtcOffset);
-            await _discordMessages.EditMessageAsync(calendar.Message, string.Empty, embed);
+            var embed = CreateCalendarEmbed(calendar, events, calendar.UtcOffset);
+
+            //if message id is 0 the calendar hasn't been posted yet
+            if (calendar.MessageId == 0)
+            {
+                var message = await _discordMessages.SendMessageAsync(calendar.ChannelId, string.Empty, embed);
+                await _calendarData.UpdateCalendarMessageId(calendar.Id, message.MessageId);
+            }
+            else
+            {
+                await _discordMessages.EditMessageAsync(new BotMessage(calendar.MessageId, calendar.ChannelId), string.Empty, embed);
+            }
         }
 
-        private BotEmbed CreateCalendarEmbed(IEnumerable<Event> events, int utcOffset)
+        private BotEmbed CreateCalendarEmbed(Calendar calendar, IEnumerable<KeyValuePair<Event, BotMember>> events, int utcOffset)
         {
             var now = DateTime.UtcNow.AddHours(utcOffset);
 
@@ -105,16 +137,16 @@ namespace Core.Services
             {
                 var dayDate = now.Date.AddDays(i);
 
-                var offsetEvents = new List<Event>();
+                var offsetEvents = new Dictionary<Event, BotMember>();
                 foreach (var @event in events)
                 {
-                    var startDateTime = @event.StartDateTime.ToUniversalTime().AddHours(utcOffset);
+                    var startDateTime = @event.Key.StartDateTime.ToUniversalTime().AddHours(utcOffset);
 
                     //add event to day
                     if (dayDate.Equals(startDateTime.Date))
                     {
-                        offsetEvents.Add(new Event(@event.Id, @event.Leader, @event.Name,
-                            startDateTime, @event.EndDateTime.ToUniversalTime().AddHours(utcOffset)));
+                        offsetEvents.Add(new Event(@event.Key.Id, @event.Key.LeaderDiscordId, @event.Key.Name, @event.Key.Active,
+                            startDateTime, @event.Key.EndDateTime.ToUniversalTime().AddHours(utcOffset)), @event.Value);
                     }
                 }
 
@@ -123,9 +155,11 @@ namespace Core.Services
 
             var embed = new BotEmbed
             {
-                Title = $":calendar_spiral: CLAN CALENDAR",
+                Title = $":calendar_spiral: {calendar.Name.ToUpper()}",
+                Url = new Uri("http://osrsclan.com"),
                 Footer = new BotFooter(
                     $"Last synched with the clan's calendar on {now.ToString("dddd MMMM d")} at {now.ToString("t")} (UTC{timezone})."),
+                ColorHex = calendar.ColorHex,
                 Description = FormatCalendar(days, timezone, now)
             };
 
@@ -141,9 +175,10 @@ namespace Core.Services
             foreach (var day in days)
             {
                 var dayFormatted = FormatDay(day, dateTimeNow);
-                if (contentLength + dayFormatted.Length <= 1800)
+                if (contentLength + dayFormatted.Length <= 1900)
                 {
                     calendarContent.Add(dayFormatted);
+                    contentLength += dayFormatted.Length;
                 }
                 else
                 {
@@ -158,10 +193,15 @@ namespace Core.Services
         {
             //format events
             var eventString = new List<string>();
-            day.Events.ToList().ForEach(x =>
+            var descriptionLength = 0;
+
+            foreach (var @event in day.Events)
             {
-                eventString.Add(FormatEvent(x, day.Date));
-            });
+                var content = FormatEvent(@event.Key, day.Date, @event.Value, descriptionLength);
+                if (content.Length + descriptionLength >= 1900) break;
+                eventString.Add(content);
+                descriptionLength += content.Length;
+            }
 
             if (day.Date.Date.CompareTo(dateTimeNow.Date) == 0)
             {
@@ -183,8 +223,13 @@ namespace Core.Services
             }
         }
 
-        private string FormatEvent(Event @event, DateTime dayDate)
+        private string FormatEvent(Event @event, DateTime dayDate, BotMember leader, int descriptionLength)
         {
+            var leaderName = leader?.DisplayName ?? 
+                             leader?.Nickname ??
+                             leader?.Username ?? 
+                             "unknown";
+
             //todo: implement all day events if needed
             //started
             if (@event.StartDateTime.Date.CompareTo(dayDate.Date) < 0)
@@ -192,12 +237,12 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"Ends on {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.Leader.Username}]";
+                    return $"Ends on {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {leaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.Leader.Username}]";
+                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {leaderName}]";
                 }
             }
             else
@@ -205,14 +250,47 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.Leader.Username}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {leaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.Leader.Username}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {leaderName}]";
                 }
             }
+        }
+
+        private async Task<IEnumerable<BotMember>> GetEventLeadersAsync(ulong guildId, IEnumerable<Event> events)
+        {
+            var leaders = new List<BotMember>();
+            var leadersNotFound = new List<ulong>();
+            foreach (var @event in events)
+            {
+                var found = false;
+
+                if(leadersNotFound.Contains(@event.LeaderDiscordId)) continue;
+
+                foreach (var botMember in leaders)
+                {
+                    if (botMember.Id == @event.LeaderDiscordId)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) continue;
+                try
+                {
+                    leaders.Add(await _discordMembers.GetBotGuildMember(guildId, @event.LeaderDiscordId));
+                }
+                catch
+                {
+                    leadersNotFound.Add(@event.LeaderDiscordId);
+                }
+            }
+
+            return leaders.AsEnumerable();
         }
     }
 }

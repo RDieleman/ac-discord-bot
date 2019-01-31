@@ -1,4 +1,4 @@
-﻿namespace Discord.Entities
+﻿namespace Core.Entities.Timers
 {
     public interface ITimer
     {

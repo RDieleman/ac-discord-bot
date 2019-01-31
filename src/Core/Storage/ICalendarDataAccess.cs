@@ -7,9 +7,6 @@ namespace Core.Storage
     public interface ICalendarDataAccess
     {
         Task<IEnumerable<Calendar>> GetCalendarsFromGuild(ulong guildId);
-
-        Task AddCalendar(ulong guildId, Calendar calendar);
-
-        Task DeleteCalendar(ulong guildId, Calendar calendar);
+        Task UpdateCalendarMessageId(int calendarId, ulong discordMessageId);
     }
 }

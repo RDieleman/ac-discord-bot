@@ -5,16 +5,18 @@ namespace Core.Entities
     public class Event
     {
         public int Id { get; }
-        public BotGuildMember Leader { get; }
+        public ulong LeaderDiscordId { get; }
         public string Name { get; }
+        public bool Active { get; }
         public DateTime StartDateTime { get; }
         public DateTime EndDateTime { get; }
 
-        public Event(int id, BotGuildMember leader, string name, DateTime startDateTime, DateTime endDateTime)
+        public Event(int id,  ulong leaderDiscordId, string name, bool active, DateTime startDateTime, DateTime endDateTime)
         {
             Id = id;
-            Leader = leader;
+            LeaderDiscordId = leaderDiscordId;
             Name = name;
+            Active = active;
             StartDateTime = startDateTime;
             EndDateTime = endDateTime;
         }

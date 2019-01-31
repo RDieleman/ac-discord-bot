@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Threading.Tasks;
 using Core.Entities;
 using Core.Storage;
@@ -6,12 +7,12 @@ using DSharpPlus.Entities;
 
 namespace Discord.Convertors
 {
-    public class EntityConvertor
+    public class DiscordEntityConvertor
     {
         private readonly ICalendarDataAccess _calendarData;
         private readonly IEventDataAccess _eventData;
 
-        public EntityConvertor(ICalendarDataAccess calendarData, IEventDataAccess eventData)
+        public DiscordEntityConvertor(ICalendarDataAccess calendarData, IEventDataAccess eventData)
         {
             _calendarData = calendarData;
             _eventData = eventData;
@@ -24,8 +25,8 @@ namespace Discord.Convertors
             if (!(embed.Author is null))
                 builder.WithAuthor(embed.Author.Name, embed.Author.Url, embed.Author.IconUrl);
 
-            if (!(embed.Color is null))
-                builder.WithColor(new DiscordColor(embed.Color.R, embed.Color.G, embed.Color.B));
+            if (!(embed.ColorHex is null))
+                builder.WithColor(new DiscordColor(embed.ColorHex));
 
             if (!(embed.Description is null))
                 builder.WithDescription(embed.Description);
@@ -69,6 +70,9 @@ namespace Discord.Convertors
 
             return new BotGuild(guild.Id, calendars, events);
         }
-            
+
+        public BotMember DiscordMemberToBotMember(DiscordMember member)
+            => new BotMember(member.Id, member.Email, member.Username, member.Nickname, member.DisplayName, member.IsBot, member.MfaEnabled, member.Verified, member.IsOwner, member.JoinedAt, member.AvatarUrl);
+
     }
 }

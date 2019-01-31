@@ -14,5 +14,6 @@ namespace Storage.Entities
         public DateTime end_date { get; set; }
         public DateTimeOffset deleted_at { get; set; }
         public string name { get; set; }
+        public bool allday { get; set; }
     }
 }

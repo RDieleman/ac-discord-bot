@@ -149,7 +149,7 @@ namespace Core.Services
             var embed = new BotEmbed
             {
                 Title = $":calendar_spiral: {calendar.Name.ToUpper()}",
-                Url = new Uri("http://osrsclan.com"),
+                Url = new Uri("https://www.rs-ac.com"),
                 Footer = new BotFooter(
                     $"Last synched with the clan's calendar on {now.ToString("dddd MMMM d")} at {now.ToString("t")} (UTC{timezone})."),
                 ColorHex = calendar.ColorHex,
@@ -225,12 +225,12 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"Ends on {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                    return $"Ends on {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
                 }
             }
             else
@@ -238,12 +238,12 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
                 }
             }
         }

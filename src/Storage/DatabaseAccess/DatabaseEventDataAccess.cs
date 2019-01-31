@@ -36,7 +36,9 @@ namespace Storage
             var dateTimeMinString = now.Subtract(TimeSpan.FromHours(12)).ToString("yyyy-MM-dd 00:00:00");
             var dateTimeMaxString = now.Add(TimeSpan.FromHours(14)).Add(TimeSpan.FromDays(7)).ToString("yyyy-MM-dd 23:59:59");
 
-            var sql = "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.start_date > @minDate AND e.start_date < @maxDate AND e.end_date > @minDate AND e.end_date > e.start_date;";
+            var sql =
+                "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.start_date > @minDate AND e.start_date < @maxDate AND e.end_date > @minDate AND e.end_date >= e.start_date;";
+
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
                 dataEvents = connection.Query<DataEvent>(sql, new { minDate = dateTimeMinString, maxDate = dateTimeMaxString }).ToList();
@@ -49,6 +51,18 @@ namespace Storage
             }
 
             return events.AsEnumerable();
+        }
+
+        public async Task TrackAttendance(int eventId, IEnumerable<string> attendeesIds)
+        {
+
+            var sql =
+                "UPDATE members SET id_events_attended=concat_ws(',', id_events_attended, @EventId), count_events_attended = count_events_attended + 1 WHERE  discord_id IN @Ids;";
+
+            using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
+            {
+                connection.Execute(sql, new { EventId = eventId,  Ids = attendeesIds.ToArray()});
+            }
         }
     }
 }

@@ -56,6 +56,7 @@ namespace Discord
                 builder.AddInstance(_entityConvertor);
                 builder.AddInstance(new DateTimeService());
                 builder.AddInstance(new CalendarService(this, _dataAccess.CalendarData, this, this));
+                builder.AddInstance(new EventService(_dataAccess.EventData));
                 _dependencyCollection = builder.Build();
             }
         }
@@ -74,6 +75,7 @@ namespace Discord
 
             //register commands
             _commandsNextModule.RegisterCommands<CalendarCommand>();
+            _commandsNextModule.RegisterCommands<AttendanceCommand>();
         }
 
         public void InitializeTimers()

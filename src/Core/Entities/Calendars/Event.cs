@@ -10,8 +10,9 @@ namespace Core.Entities
         public bool Active { get; }
         public DateTime StartDateTime { get; }
         public DateTime EndDateTime { get; }
+        public bool Allday { get; }
 
-        public Event(int id,  string leaderName, string name, bool active, DateTime startDateTime, DateTime endDateTime)
+        public Event(int id,  string leaderName, string name, bool active, DateTime startDateTime, DateTime endDateTime, bool allday)
         {
             Id = id;
             LeaderName = leaderName;
@@ -19,6 +20,7 @@ namespace Core.Entities
             Active = active;
             StartDateTime = startDateTime;
             EndDateTime = endDateTime;
+            Allday = allday;
         }
     }
 }

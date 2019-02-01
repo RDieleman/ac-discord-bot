@@ -68,7 +68,7 @@ namespace Storage
 
         public async Task<Event> GetEvent(int eventId)
         {
-            var sql = "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.id = @EventId;";
+            var sql = "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.id = @EventId LIMIT 1;";
             IEnumerable<DataEvent> dataEvents = null;
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {

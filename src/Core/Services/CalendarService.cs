@@ -139,7 +139,7 @@ namespace Core.Services
                     if (dayDate.CompareTo(startDateTime.Date) >= 0 && dayDate.CompareTo(endDateTime.Date) <= 0)
                     {
                         offsetEvents.Add(new Event(@event.Id, @event.LeaderName, @event.Name, @event.Active,
-                            startDateTime, endDateTime, @event.Allday));
+                            startDateTime, endDateTime, @event.Allday, @event.AttendanceDone));
                     }
                 }
 

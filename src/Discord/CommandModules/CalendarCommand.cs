@@ -12,7 +12,6 @@ namespace Discord.CommandModules
     public class CalendarCommand
     {
         private readonly CalendarService _service;
-
         private readonly DiscordEntityConvertor _convertor;
 
         public CalendarCommand(CalendarService service, DiscordEntityConvertor convertor)

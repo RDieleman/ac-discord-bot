@@ -25,6 +25,11 @@ namespace Storage.JsonAccess
             throw new System.NotImplementedException();
         }
 
+        public Task<Event> GetEvent(int eventId)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public async Task AddEventAsync(ulong guildId, Event @event)
         {
             var events = (await GetGuildEventsAsync(guildId))?.ToList() ?? new List<Event>();

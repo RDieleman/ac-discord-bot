@@ -15,5 +15,6 @@ namespace Storage.Entities
         public DateTimeOffset deleted_at { get; set; }
         public string name { get; set; }
         public bool allday { get; set; }
+        public bool event_tracked { get; set; }
     }
 }

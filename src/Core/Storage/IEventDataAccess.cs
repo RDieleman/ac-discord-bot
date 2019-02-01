@@ -8,5 +8,6 @@ namespace Core.Storage
     {
         Task<IEnumerable<Event>> GetGuildEventsAsync(ulong guildId);
         Task TrackAttendance(int eventId, IEnumerable<string> attendeesStringIds);
+        Task<Event> GetEvent(int eventId);
     }
 }

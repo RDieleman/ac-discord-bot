@@ -57,12 +57,30 @@ namespace Storage
         {
 
             var sql =
-                "UPDATE members SET id_events_attended=concat_ws(',', id_events_attended, @EventId), count_events_attended = count_events_attended + 1 WHERE  discord_id IN @Ids;";
+                "UPDATE members SET id_events_attended=concat_ws(',', id_events_attended, @EventId), count_events_attended = count_events_attended + 1 WHERE  discord_id IN @Ids;" +
+                "UPDATE events SET event_tracked = 1 WHERE id = @EventId";
 
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
                 connection.Execute(sql, new { EventId = eventId,  Ids = attendeesIds.ToArray()});
             }
+        }
+
+        public async Task<Event> GetEvent(int eventId)
+        {
+            var sql = "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.id = @EventId;";
+            IEnumerable<DataEvent> dataEvents = null;
+            using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
+            {
+                dataEvents = connection.Query<DataEvent>(sql, new {EventId = eventId});
+            }
+            var events = new List<Event>();
+            foreach (var dataEvent in dataEvents)
+            {
+                events.Add(_convertor.DataEventToEvent(dataEvent));
+            }
+
+            return events.FirstOrDefault();
         }
     }
 }

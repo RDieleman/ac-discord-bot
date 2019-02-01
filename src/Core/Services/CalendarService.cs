@@ -139,7 +139,7 @@ namespace Core.Services
                     if (dayDate.CompareTo(startDateTime.Date) >= 0 && dayDate.CompareTo(endDateTime.Date) <= 0)
                     {
                         offsetEvents.Add(new Event(@event.Id, @event.LeaderName, @event.Name, @event.Active,
-                            startDateTime, @event.EndDateTime.ToUniversalTime().AddHours(utcOffset)));
+                            startDateTime, endDateTime, @event.Allday, @event.AttendanceDone));
                     }
                 }
 
@@ -200,10 +200,10 @@ namespace Core.Services
             {
                 if (day.Events == null | eventString.Count < 1)
                 {
-                    return $"**Today**```ini{Environment.NewLine} ```";
+                    return $"**Today** - {day.Date:MMMM d}```ini{Environment.NewLine} ```";
                 }
 
-                return $"**Today**```ini{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, eventString)}```";
+                return $"**Today** - {day.Date:MMMM d} ```ini{Environment.NewLine}{string.Join(Environment.NewLine + Environment.NewLine, eventString)}```";
             }
             else
             {
@@ -220,12 +220,17 @@ namespace Core.Services
         {
             //todo: implement all day events if needed
             //started
+
+            if (@event.Allday)
+            {
+                return $"All day{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+            }
             if (@event.StartDateTime.Date.CompareTo(dayDate.Date) < 0)
             {
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"Ends on {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"All day{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else

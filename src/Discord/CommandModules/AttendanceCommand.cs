@@ -27,36 +27,41 @@ namespace Discord.CommandModules
         public async Task SetAttendance(CommandContext context, int eventId)
         {
             //todo: set command permissions
-            var attendees = new List<DiscordMember>();
-
-            //add mentioned users to list of attendees
-            foreach (var messageMentionedUser in context.Message.MentionedUsers.Distinct().Where(x => !x.IsBot).ToList())
-            {
-                attendees.Add(await context.Guild.GetMemberAsync(messageMentionedUser.Id));
-            }
-
-            //get list of attendees from leader's voice channel
-            var leader = await context.Guild.GetMemberAsync(context.User.Id);
-            var voiceChannel = leader.VoiceState?.Channel;
-            if (voiceChannel != null)
-            {
-                attendees.AddRange((context.Guild.Members.Where(x => x.VoiceState?.Channel?.Id == voiceChannel.Id && !x.IsBot)).Distinct());
-            }
-
-
-            var botMembers = new List<BotMember>();
-            foreach (var discordMember in attendees)
-            {
-                botMembers.Add(_convertor.DiscordMemberToBotMember(discordMember));
-            }
-
             try
             {
+                var attendees = new List<DiscordMember>();
+
+                //add mentioned users to list of attendees
+                foreach (var messageMentionedUser in context.Message.MentionedUsers.Distinct().Where(x => !x.IsBot).ToList())
+                {
+                    attendees.Add(await context.Guild.GetMemberAsync(messageMentionedUser.Id));
+                }
+
+                //get list of attendees from leader's voice channel
+                var leader = await context.Guild.GetMemberAsync(context.User.Id);
+                var voiceChannel = leader.VoiceState?.Channel;
+                if (voiceChannel != null)
+                {
+                    attendees.AddRange((context.Guild.Members.Where(x => x.VoiceState?.Channel?.Id == voiceChannel.Id && !x.IsBot)).Distinct());
+                }
+
+
+                var botMembers = new List<BotMember>();
+                foreach (var discordMember in attendees)
+                {
+                    botMembers.Add(_convertor.DiscordMemberToBotMember(discordMember));
+                }
+
                 await _eventService.SetAttendance(eventId, botMembers.AsEnumerable());
+
+                var builder = new DiscordEmbedBuilder().WithDescription($"Attendance for event `{eventId}` has been tracked.");
+                _= context.RespondAsync(string.Empty, false, builder.Build());
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
+                var builder = new DiscordEmbedBuilder().WithDescription(ex.Message);
+                _ = context.Channel.SendMessageAsync(string.Empty, false, builder.Build());
             }
         }
     }

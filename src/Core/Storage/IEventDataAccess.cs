@@ -7,6 +7,7 @@ namespace Core.Storage
     public interface IEventDataAccess
     {
         Task<IEnumerable<Event>> GetGuildEventsAsync(ulong guildId);
-        Task AddEventAsync(ulong guildId, Event @event);
+        Task TrackAttendance(int eventId, IEnumerable<string> attendeesStringIds);
+        Task<Event> GetEvent(int eventId);
     }
 }

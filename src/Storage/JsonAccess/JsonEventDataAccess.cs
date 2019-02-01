@@ -20,6 +20,16 @@ namespace Storage.JsonAccess
         public async Task<IEnumerable<Event>> GetGuildEventsAsync(ulong guildId)
             => _jsonData.RestoreObject<IEnumerable<Event>>(GetEventCollectionByGuildId(guildId), GetKey());
 
+        public Task TrackAttendance(int eventId, IEnumerable<string> attendeesStringIds)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<Event> GetEvent(int eventId)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public async Task AddEventAsync(ulong guildId, Event @event)
         {
             var events = (await GetGuildEventsAsync(guildId))?.ToList() ?? new List<Event>();

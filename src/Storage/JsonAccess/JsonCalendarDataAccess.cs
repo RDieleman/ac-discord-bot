@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Core.Entities;
@@ -18,6 +19,11 @@ namespace Storage.JsonAccess
         public async Task<IEnumerable<Calendar>> GetCalendarsFromGuild(ulong guildId)
             => _jsonData.RestoreCollection<Calendar>(GetCalendarCollectionByGuildId(guildId));
 
+        public Task UpdateCalendarMessageId(int calendarId, ulong discordMessageId)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task AddCalendar(ulong guildId, Calendar calendar)
             => _jsonData.StoreObject(calendar, GetCalendarCollectionByGuildId(guildId), GetKeyByCalendar(calendar));
 
@@ -28,6 +34,6 @@ namespace Storage.JsonAccess
             => string.Concat(guildId.ToString(), "/", "Calendars");
 
         private static string GetKeyByCalendar(Calendar calendar)
-            => calendar.Message.MessageId.ToString();
+            => calendar.MessageId.ToString();
     }
 }

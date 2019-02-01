@@ -3,38 +3,39 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord.Configuration;
 using Discord.Convertors;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using Core;
+using Core.Configuration;
 using Core.Discord;
 using Core.Entities;
+using Core.Entities.Timers;
 using Core.Services;
 using Core.Storage;
 using Discord.CommandModules;
-using Discord.Entities;
 using DSharpPlus.Entities;
+using Storage;
 
 namespace Discord
 {
-    public class DSharpPlusDiscord : IDiscord, IDiscordMessages, IDiscordGuilds
+    public class DSharpPlusDiscord : IDiscord, IDiscordMessages, IDiscordGuilds, IDiscordMembers
     {
         private DiscordClient _discordClient;
         private CommandsNextModule _commandsNextModule;
         private DependencyCollection _dependencyCollection;
 
-        private readonly EntityConvertor _entityConvertor;
+        private readonly DiscordEntityConvertor _entityConvertor;
+        private readonly DataAccess _dataAccess;
         private readonly IBotConfiguration _botConfiguration;
-        private readonly ICalendarDataAccess _calendarData;
-        private readonly IEventDataAccess _eventData;
 
-        public DSharpPlusDiscord(IBotConfiguration botConfiguration, IEventDataAccess eventData, ICalendarDataAccess calendarData, EntityConvertor entityConvertor)
+        private readonly List<ITimer> _timers = new List<ITimer>();
+
+        public DSharpPlusDiscord(IBotConfiguration botConfiguration,  DiscordEntityConvertor entityConvertor, ICalendarDataAccess calendarData, IEventDataAccess eventData)
         {
             _botConfiguration = botConfiguration;
             _entityConvertor = entityConvertor;
-            _eventData = eventData;
-            _calendarData = calendarData;
+            _dataAccess = new DataAccess(calendarData, eventData);
         }
 
         public async Task RunAsync()
@@ -44,6 +45,8 @@ namespace Discord
             await InitializeDiscordClientAsync();
 
             InitializeCommandsNextModuleAsync();
+
+            InitializeTimers();
         }
 
         private void InitializeDependencyCollection()
@@ -52,7 +55,8 @@ namespace Discord
             {
                 builder.AddInstance(_entityConvertor);
                 builder.AddInstance(new DateTimeService());
-                builder.AddInstance(new CalendarService(this, _calendarData, this));
+                builder.AddInstance(new CalendarService(this, _dataAccess.CalendarData, this, this));
+                builder.AddInstance(new EventService(_dataAccess.EventData));
                 _dependencyCollection = builder.Build();
             }
         }
@@ -71,6 +75,13 @@ namespace Discord
 
             //register commands
             _commandsNextModule.RegisterCommands<CalendarCommand>();
+            _commandsNextModule.RegisterCommands<AttendanceCommand>();
+        }
+
+        public void InitializeTimers()
+        {
+            _timers.Add(new CalendarTimer(_dependencyCollection.GetDependency<CalendarService>()));
+            _timers.ForEach(x => x.Start());
         }
 
         private CommandsNextConfiguration GetDefaultCommandsNextConfiguration()
@@ -94,11 +105,9 @@ namespace Discord
             };
         }
 
-        public async Task<BotMessage> SendMessageAsync(BotChannel targetChannel, string message = "", BotEmbed embed = null)
+        public async Task<BotMessage> SendMessageAsync(ulong channelId, string message = "", BotEmbed embed = null)
         {
-            var guild = await _discordClient.GetGuildAsync(targetChannel.GuildId);
-            //var guild = _discordClient.Guilds.FirstOrDefault(x => x.Key == targetChannel.GuildId).Value;
-            var channel = guild.GetChannel(targetChannel.ChannelId);
+            var channel = await _discordClient.GetChannelAsync(channelId);
 
             DiscordEmbed discordEmbed = null;
             if (embed != null)
@@ -151,6 +160,13 @@ namespace Discord
         {
             var discordGuild = await _discordClient.GetGuildAsync(guildId);
             return await _entityConvertor.DiscordGuildToBotGuild(discordGuild);
+        }
+
+        public async Task<BotMember> GetBotGuildMember(ulong guildId, ulong memberId)
+        {
+            var guild = await _discordClient.GetGuildAsync(guildId);
+            var member = await guild.GetMemberAsync(memberId);
+            return _entityConvertor.DiscordMemberToBotMember(member);
         }
     }
 }

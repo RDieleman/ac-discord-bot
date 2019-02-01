@@ -1,4 +1,4 @@
-﻿using Discord.Configuration;
+﻿using Core.Configuration;
 
 namespace Configuration
 {

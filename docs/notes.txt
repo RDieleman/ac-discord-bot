@@ -1,0 +1,13 @@
+- Bot is going to be public, so need way to verify guild when bot is added to guild
+
+#Database
+  - how are guilds saved?
+    Single or multiple databases?
+  - saving the trialend date?
+  - are events deleted after a while?
+    if so, prob better to avoid the normalization
+  - if using normalization probably best to use stored procedures
+  - user_id in Event table should be member_id?
+  - active value seems weird to save in db?
+  - Event table needs guild id value if using a single database for all guilds
+  - Need to add calendar table (with guild id if using a single database)

@@ -7,7 +7,7 @@ namespace Core.Entities
     public class BotEmbed
     {
         public BotAuthor Author { get; set; }
-        public BotColor Color { get; set; }
+        public string ColorHex { get; set; }
         public string Description { get; set; }
         public BotFooter Footer { get; set; }
         public Uri ImageUrl { get; set; }

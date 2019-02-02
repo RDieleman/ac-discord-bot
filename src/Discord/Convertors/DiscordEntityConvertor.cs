@@ -65,10 +65,7 @@ namespace Discord.Convertors
 
         public async Task<BotGuild> DiscordGuildToBotGuild(DiscordGuild guild)
         {
-            var events = await _eventData.GetGuildEventsAsync(guild.Id);
-            var calendars = await _calendarData.GetCalendarsFromGuild(guild.Id);
-
-            return new BotGuild(guild.Id, calendars, events);
+            return new BotGuild(guild.Id);
         }
 
         public BotMember DiscordMemberToBotMember(DiscordMember member)

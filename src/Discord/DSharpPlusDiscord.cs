@@ -31,16 +31,16 @@ namespace Discord
 
         private readonly List<ITimer> _timers = new List<ITimer>();
 
-        public DSharpPlusDiscord(IBotConfiguration botConfiguration,  DiscordEntityConvertor entityConvertor, ICalendarDataAccess calendarData, IEventDataAccess eventData)
+        public DSharpPlusDiscord(IBotConfiguration botConfiguration,  DiscordEntityConvertor entityConvertor, ICalendarDataAccess calendarData, IEventDataAccess eventData, IClanDataAccess clanData)
         {
             _botConfiguration = botConfiguration;
             _entityConvertor = entityConvertor;
-            _dataAccess = new DataAccess(calendarData, eventData);
+            _dataAccess = new DataAccess(calendarData, eventData, clanData);
         }
 
         public async Task RunAsync()
         {
-            InitializeDependencyCollection();
+            await InitializeDependencyCollection();
 
             await InitializeDiscordClientAsync();
 
@@ -49,14 +49,20 @@ namespace Discord
             InitializeTimers();
         }
 
-        private void InitializeDependencyCollection()
+        private async Task InitializeDependencyCollection()
         {
             using (var builder = new DependencyCollectionBuilder())
             {
                 builder.AddInstance(_entityConvertor);
-                builder.AddInstance(new DateTimeService());
-                builder.AddInstance(new CalendarService(this, _dataAccess.CalendarData, this, this));
+                builder.AddInstance(new DateTimeService());              
                 builder.AddInstance(new EventService(_dataAccess.EventData));
+                builder.AddInstance(new ClanService(await _dataAccess.ClanData.GetClansAsync(), _dataAccess.ClanData));
+                builder.AddInstance(this as IDiscordMessages);
+                builder.AddInstance(this as IDiscordGuilds);
+                builder.AddInstance(this as IDiscordMembers);
+                _dependencyCollection = builder.Build();
+
+                builder.AddInstance(new CalendarService(this, _dataAccess.CalendarData, _dependencyCollection.GetDependency<ClanService>(), _dependencyCollection.GetDependency<EventService>()));
                 _dependencyCollection = builder.Build();
             }
         }
@@ -74,8 +80,9 @@ namespace Discord
             _commandsNextModule = _discordClient.UseCommandsNext(config);
 
             //register commands
-            _commandsNextModule.RegisterCommands<CalendarCommand>();
-            _commandsNextModule.RegisterCommands<AttendanceCommand>();
+            _commandsNextModule.RegisterCommands<CalendarCommands>();
+            _commandsNextModule.RegisterCommands<AttendanceCommands>();
+            _commandsNextModule.RegisterCommands<MiscellaneousCommands>();
         }
 
         public void InitializeTimers()
@@ -90,7 +97,33 @@ namespace Discord
             {
                 EnableMentionPrefix = true,
                 Dependencies = _dependencyCollection,
+                CustomPrefixPredicate = CheckPrefix,
+                EnableDms = false,              
             };
+        }
+
+        private Task<int> CheckPrefix(DiscordMessage msg)
+        {
+            if (msg.Channel.IsPrivate) return Task.FromResult(-1);
+            var service = _dependencyCollection.GetDependency<ClanService>();
+            var clan = service.GetClan(msg.Channel.GuildId);
+            if (clan == null) return Task.FromResult(-1);
+            //todo: update clans if clan not found
+            if (!msg.Content.StartsWith(clan.Prefix)) return Task.FromResult(-1);
+
+            if (msg.ChannelId != clan.CommandChannelId)
+            {
+                var embed = new BotEmbed();
+                embed.Description = "You can't use commands in this channel.";
+                _= SendAndDeleteMessageAsync(msg.ChannelId, "", embed);
+                _ = DeleteMessageAsync(_entityConvertor.DiscordMessageToBotMessage(msg));
+                return Task.FromResult(-1);
+            }
+
+            var commandMessage = _entityConvertor.DiscordMessageToBotMessage(msg);
+            _ = DeleteMessageAsync(commandMessage, TimeSpan.FromMilliseconds(750));
+
+            return Task.FromResult(clan.Prefix.Length);
         }
 
         private DiscordConfiguration GetDefaultDiscordConfiguration()
@@ -115,8 +148,18 @@ namespace Discord
                 discordEmbed = _entityConvertor.BotEmbedToDiscordEmbed(embed);
             }
 
-            var discordMessage = await channel.SendMessageAsync(message, false, discordEmbed);
+            var discordMessage = await channel.SendMessageAsync(message, false, discordEmbed);          
+
             return _entityConvertor.DiscordMessageToBotMessage(discordMessage);
+        }
+
+        public async Task SendAndDeleteMessageAsync(ulong channelId, string message = "", BotEmbed embed = null,
+            TimeSpan? delay = null)
+        {
+            delay = delay ?? TimeSpan.FromSeconds(_botConfiguration.GetDeleteDelaySeconds());
+
+            var msg = await SendMessageAsync(channelId, message, embed);
+            _= DeleteMessageAsync(msg, delay);
         }
 
         public async Task EditMessageAsync(BotMessage targetMessage, string message = null, BotEmbed embed = null)
@@ -131,11 +174,21 @@ namespace Discord
             await discordMessage.ModifyAsync(message, discordEmbed);
         }
 
-        public async Task DeleteMessageAsync(BotMessage targetMessage)
+        public async Task<int> DeleteBulkAsync(ulong channelId, int amount, ulong commandId)
+        {
+            if (amount > 100) amount = 100;
+            var channel = await _discordClient.GetChannelAsync(channelId);
+            var messages = (await channel.GetMessagesAsync(amount, before: commandId)).ToList();
+            await channel.DeleteMessagesAsync(messages);
+            return messages.Count;
+        }
+
+        public async Task DeleteMessageAsync(BotMessage targetMessage, TimeSpan? delay = null)
         {
             var channel = await _discordClient.GetChannelAsync(targetMessage.ChannelId);
             var discordMessage = await channel.GetMessageAsync(targetMessage.MessageId);
 
+            if (delay.HasValue) await Task.Delay(delay.Value);
             await discordMessage.DeleteAsync();
         }
 

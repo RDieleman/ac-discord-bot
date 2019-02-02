@@ -7,6 +7,7 @@ namespace Configuration
         private readonly IConfiguration _config;
 
         private const string DiscordBotTokenKey = "DiscordToken";
+        private const string DeleteDelaySeconds = "DeleteDelaySeconds";
 
         public BotConfiguration(IConfiguration config)
         {
@@ -15,5 +16,14 @@ namespace Configuration
 
         public string GetBotToken()
             => _config.GetValueFor(DiscordBotTokenKey);
+
+        public int GetDeleteDelaySeconds()
+        {
+            var delay = _config.GetValueFor(DeleteDelaySeconds);
+            if (string.IsNullOrWhiteSpace(delay)) return 0;
+
+            int.TryParse(delay, out var delayNum);
+            return delayNum;
+        }
     }
 }

@@ -35,5 +35,15 @@ namespace Storage.JsonAccess
 
         private static string GetKeyByCalendar(Calendar calendar)
             => calendar.MessageId.ToString();
+
+        public Task<IEnumerable<Calendar>> GetCalendarsFromGuild(int clanId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task UpdateCalendarMessageId(int clanId, int calendarId, ulong discordMessageId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -17,9 +17,9 @@ namespace Core.Services
             _eventData = eventData;
         }
 
-        public async Task SetAttendance(int eventId, IEnumerable<BotMember> attendees)
+        public async Task SetAttendance(int clanId, int eventId, IEnumerable<BotMember> attendees)
         {
-            var @event = await _eventData.GetEvent(eventId);
+            var @event = await _eventData.GetEvent(clanId, eventId);
             if(@event is null) throw new EventNotFoundException($"No event found with the id `{eventId}`.");
             if(@event.AttendanceDone) throw  new AttendanceTrackedException($"The attendance for the event `{@event.Name}` has already been tracked.");
 
@@ -29,7 +29,12 @@ namespace Core.Services
                 attendeesStringIds.Add($"{Convert.ToString(botMember.Id)}"); //todo: fix this once ids get fixed in the database
             }
 
-            await _eventData.TrackAttendance(eventId, attendeesStringIds);
+            await _eventData.TrackAttendance(clanId, eventId, attendeesStringIds);
+        }
+
+        public async Task<IEnumerable<Event>> GetClanEvents(int clanId)
+        {
+            return await _eventData.GetGuildEventsAsync(clanId);
         }
     }
 }

@@ -42,5 +42,20 @@ namespace Storage.JsonAccess
 
         private static string GetKey()
             => "Events";
+
+        public Task<IEnumerable<Event>> GetGuildEventsAsync(int clanId)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task TrackAttendance(int clanId, int eventId, IEnumerable<string> attendeesStringIds)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public Task<Event> GetEvent(int clanId, int eventId)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

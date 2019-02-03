@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Core.Entities;
 using Core.Exceptions;
@@ -17,11 +18,9 @@ namespace Core.Services
             _eventData = eventData;
         }
 
-        public async Task SetAttendance(int eventId, IEnumerable<BotMember> attendees)
+        public async Task SetAttendance(int clanId, Event @event, IEnumerable<BotMember> attendees)
         {
-            var @event = await _eventData.GetEvent(eventId);
-            if(@event is null) throw new EventNotFoundException($"No event found with the id `{eventId}`.");
-            if(@event.AttendanceDone) throw  new AttendanceTrackedException($"The attendance for the event `{@event.Name}` has already been tracked.");
+            if(@event.AttendanceDone) throw  new AttendanceTrackedException(@event.Name);
 
             var attendeesStringIds = new List<string>();
             foreach (var botMember in attendees)
@@ -29,7 +28,23 @@ namespace Core.Services
                 attendeesStringIds.Add($"{Convert.ToString(botMember.Id)}"); //todo: fix this once ids get fixed in the database
             }
 
-            await _eventData.TrackAttendance(eventId, attendeesStringIds);
+            await _eventData.TrackAttendance(clanId, @event.Id, attendeesStringIds);
+        }
+
+        public async Task<IEnumerable<Event>> GetClanEvents(int clanId)
+        {
+            return await _eventData.GetGuildEventsAsync(clanId);
+        }
+
+        public async Task<IEnumerable<Event>> GetInProgressEvents(int clanId)
+        {
+            var now = DateTime.UtcNow;
+            var events = await GetClanEvents(clanId);
+            return events.Where(x =>
+                x.Active && 
+                !x.AttendanceDone &&
+                now.CompareTo(x.EndDateTime.ToUniversalTime()) <= 0 &&
+                now.CompareTo(x.StartDateTime.ToUniversalTime()) >= 0);
         }
     }
 }

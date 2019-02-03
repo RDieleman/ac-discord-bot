@@ -23,14 +23,14 @@ namespace Storage.DatabaseAccess
             _convertor = convertor;
         }
 
-        public async Task<IEnumerable<Calendar>> GetCalendarsFromGuild(ulong guildId)
+        public async Task<IEnumerable<Calendar>> GetCalendarsFromGuild(int clanId)
         {
-            var sql = "SELECT * FROM calendar_settings WHERE deleted_at IS NULL;";
+            var sql = "SELECT * FROM calendar_settings WHERE clan_id = @ClanId AND deleted_at IS NULL;";
 
             var dataCalendars = new List<DataCalendar>();
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
-                dataCalendars = connection.Query<DataCalendar>(sql).ToList();
+                dataCalendars = connection.Query<DataCalendar>(sql, new {ClanId = clanId}).ToList();
             }
 
             var calendars = new List<Calendar>();
@@ -42,13 +42,13 @@ namespace Storage.DatabaseAccess
             return calendars.AsEnumerable();
         }
 
-        public async Task UpdateCalendarMessageId(int calendarId, ulong discordMessageId)
+        public async Task UpdateCalendarMessageId(int clanId, int calendarId, ulong discordMessageId)
         {
-            var sql = "UPDATE calendar_settings SET calendar_message_id = @MessageId WHERE id = @CalendarId;";
+            var sql = "UPDATE calendar_settings SET calendar_message_id = @MessageId WHERE clan_id = @ClanId AND id = @CalendarId;";
 
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
-                connection.Execute(sql, new {MessageId = discordMessageId, CalendarId = calendarId});
+                connection.Execute(sql, new {ClanId = clanId, MessageId = discordMessageId, CalendarId = calendarId});
             }
         }
     }

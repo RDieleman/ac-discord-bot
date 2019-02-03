@@ -55,10 +55,9 @@ namespace Core.Entities.Timers
             syncTimer.Start();
         }
 
-        private async void UpdateCalendars(object sender, ElapsedEventArgs e)
+        private void UpdateCalendars(object sender, ElapsedEventArgs e)
         {
-            //todo: add exception handling
-            await _service.UpdateCalendarsAsync();
+            _= _service.UpdateCalendarsAsync();
         }
     }
 }

@@ -3,5 +3,6 @@
     public interface IBotConfiguration
     {
         string GetBotToken();
+        int GetDeleteDelaySeconds();
     }
 }

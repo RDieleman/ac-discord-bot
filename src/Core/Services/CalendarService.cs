@@ -13,32 +13,66 @@ namespace Core.Services
     public class CalendarService
     {
         private readonly IDiscordMessages _discordMessages;
-        private readonly IDiscordGuilds _discordGuilds;
         private readonly ICalendarDataAccess _calendarData;
-        private readonly IDiscordMembers _discordMembers;
+        private readonly ClanService _clanService;
+        private readonly EventService _eventService;
 
-        public CalendarService(IDiscordMessages discordMessages, ICalendarDataAccess calendarData, IDiscordGuilds discordGuilds, IDiscordMembers discordMembers)
+        public CalendarService(IDiscordMessages discordMessages, ICalendarDataAccess calendarData, ClanService clanService, EventService eventService)
         {
             _discordMessages = discordMessages;
             _calendarData = calendarData;
-            _discordGuilds = discordGuilds;
-            _discordMembers = discordMembers;
+            _clanService = clanService;
+            _eventService = eventService;
         }
 
-        public async Task UpdateCalendarsAsync()
+        public Task UpdateCalendarsAsync()
         {
             /*
              * Get All guilds
              * Start an update task for every guild
              */
 
-            var guilds = await _discordGuilds.GetGuildsAsync();
+            var clans = _clanService.GetClans().ToList();
 
-            var updates = new List<Task<IEnumerable<Task>>>();
-
-            foreach (var botGuild in guilds)
+            foreach (var clan in clans)
             {
-                updates.Add(UpdateGuildCalendars(botGuild));
+                _= UpdateClanCalendars(clan.Id);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public async Task UpdateClanCalendars(int clanId)
+        {
+            var clan = _clanService.GetClan(clanId);
+
+            var calendars = (await GetClanCalendars(clan.Id)).ToList();
+            var events = (await _eventService.GetClanEvents(clan.Id)).ToList();
+
+            var updateTasks = new List<Task>();
+
+            foreach (var calendar in calendars)
+            {
+                updateTasks.Add(UpdateCalendar(clan.Id, calendar, events));
+            }
+
+            try
+            {
+                await Task.WhenAll(updateTasks.AsEnumerable());
+            }
+            catch
+            {
+                var embed = new BotEmbed();
+                embed.Description = "Failed to update a calendar.";
+
+                foreach (var update in updateTasks)
+                {
+                    if (!(update.Exception is null))
+                    {
+                        Console.WriteLine(update.Exception);
+                        _ = _discordMessages.SendMessageAsync(clan.NotificationChannelId, string.Empty, embed);
+                    }
+                }
             }
         }
 
@@ -60,39 +94,12 @@ namespace Core.Services
         //    await _calendarData.AddCalendar(guild.GuildId, calendar);
         //}
 
-        public async Task<IEnumerable<Task>> UpdateGuildCalendars(BotGuild guild)
+        public async Task<IEnumerable<Calendar>> GetClanCalendars(int clanId)
         {
-            /*
-             * Update all guilds calendars
-             */
-
-            var updateTasks = new List<Task>();
-
-            foreach (var calendar in guild.GetCalendars())
-            {
-                updateTasks.Add(UpdateCalendar(calendar, guild.GetEvents()));
-            }
-
-            try
-            {
-                await Task.WhenAll(updateTasks.AsEnumerable());
-            }
-            catch
-            {
-                foreach (var update in updateTasks)
-                {
-                    if (!(update.Exception is null))
-                    {
-                        //todo: handle exceptions
-                        Console.WriteLine(update.Exception);
-                    }
-                }
-            }
-
-            return updateTasks.AsEnumerable();
+            return await _calendarData.GetCalendarsFromGuild(clanId);
         }
 
-        private async Task UpdateCalendar(Calendar calendar, IEnumerable<Event> events)
+        public async Task UpdateCalendar(int clanId, Calendar calendar, IEnumerable<Event> events)
         {
             var embed = CreateCalendarEmbed(calendar, events, calendar.UtcOffset);
 
@@ -100,11 +107,11 @@ namespace Core.Services
             if (calendar.MessageId == 0)
             {
                 var message = await _discordMessages.SendMessageAsync(calendar.ChannelId, string.Empty, embed);
-                await _calendarData.UpdateCalendarMessageId(calendar.Id, message.MessageId);
+                await _calendarData.UpdateCalendarMessageId(clanId, calendar.Id, message.MessageId);
             }
             else
             {
-                await _discordMessages.EditMessageAsync(new BotMessage(calendar.MessageId, calendar.ChannelId), string.Empty, embed);
+                await _discordMessages.EditMessageAsync(calendar.ChannelId, calendar.MessageId, string.Empty, embed);
             }
         }
 
@@ -223,19 +230,19 @@ namespace Core.Services
 
             if (@event.Allday)
             {
-                return $"All day{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                return $"All day{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
             }
             if (@event.StartDateTime.Date.CompareTo(dayDate.Date) < 0)
             {
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"All day{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"All day{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
             }
             else
@@ -243,12 +250,12 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
             }
         }

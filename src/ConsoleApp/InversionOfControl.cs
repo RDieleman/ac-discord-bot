@@ -40,6 +40,8 @@ namespace ConsoleApp
                 c.ForSingletonOf<IConfiguration>().UseIfNone<ConfigManager>();
                 c.ForSingletonOf<ICalendarDataAccess>().UseIfNone<DatabaseCalendarDataAccess>();
                 c.ForSingletonOf<IEventDataAccess>().UseIfNone<DatabaseEventDataAccess>();
+                c.ForSingletonOf<IClanDataAccess>().UseIfNone<DatabaseClanDataAccess>();
+
             });
         }
 

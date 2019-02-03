@@ -4,9 +4,11 @@ namespace Core.Exceptions
 {
     public class AttendanceTrackedException : Exception
     {
-        public AttendanceTrackedException(string message) : base(message)
-        {
+        public string EventName { get; }
 
+        public AttendanceTrackedException(string name)
+        {
+            EventName = name;
         }
     }
 }

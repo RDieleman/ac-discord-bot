@@ -26,7 +26,7 @@ namespace Storage
             _convertor = convertor;
         }
 
-        public async Task<IEnumerable<Event>> GetGuildEventsAsync(ulong guildId)
+        public async Task<IEnumerable<Event>> GetGuildEventsAsync(int clanId)
         {
             //todo: fix async task issue
 
@@ -36,12 +36,11 @@ namespace Storage
             var dateTimeMinString = now.Subtract(TimeSpan.FromHours(12)).ToString("yyyy-MM-dd 00:00:00");
             var dateTimeMaxString = now.Add(TimeSpan.FromHours(14)).Add(TimeSpan.FromDays(7)).ToString("yyyy-MM-dd 23:59:59");
 
-            var sql =
-                "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.start_date > @minDate AND e.start_date < @maxDate AND e.end_date > @minDate AND e.end_date >= e.start_date;";
-
+            var sql ="SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.clan_id = @ClanId AND ((e.start_date > @minDate AND e.start_date < @maxDate) || (e.end_date > @minDate AND e.end_date < @maxDate))";
+     
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
-                dataEvents = connection.Query<DataEvent>(sql, new { minDate = dateTimeMinString, maxDate = dateTimeMaxString }).ToList();
+                dataEvents = connection.Query<DataEvent>(sql, new { ClanId = clanId, minDate = dateTimeMinString, maxDate = dateTimeMaxString }).ToList();
             }
 
             var events = new List<Event>();
@@ -53,26 +52,26 @@ namespace Storage
             return events.AsEnumerable();
         }
 
-        public async Task TrackAttendance(int eventId, IEnumerable<string> attendeesIds)
+        public async Task TrackAttendance(int clanId, int eventId, IEnumerable<string> attendeesIds)
         {
 
             var sql =
-                "UPDATE members SET id_events_attended=concat_ws(',', id_events_attended, @EventId), count_events_attended = count_events_attended + 1 WHERE  discord_id IN @Ids;" +
-                "UPDATE events SET event_tracked = 1 WHERE id = @EventId";
+                "UPDATE members SET id_events_attended=concat_ws(',', id_events_attended, @EventId), count_events_attended = count_events_attended + 1 WHERE clan_id = @ClanId AND discord_id IN @Ids;" +
+                "UPDATE events SET event_tracked = 1 WHERE clan_id = @ClanId AND id = @EventId";
 
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
-                connection.Execute(sql, new { EventId = eventId,  Ids = attendeesIds.ToArray()});
+                connection.Execute(sql, new { ClanId = clanId, EventId = eventId,  Ids = attendeesIds.ToArray()});
             }
         }
 
-        public async Task<Event> GetEvent(int eventId)
+        public async Task<Event> GetEvent(int clanId, int eventId)
         {
-            var sql = "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.id = @EventId;";
+            var sql = "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.clan_id = @ClanId AND e.id = @EventId;";
             IEnumerable<DataEvent> dataEvents = null;
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
-                dataEvents = connection.Query<DataEvent>(sql, new {EventId = eventId});
+                dataEvents = connection.Query<DataEvent>(sql, new {ClanId = clanId, EventId = eventId});
             }
             var events = new List<Event>();
             foreach (var dataEvent in dataEvents)

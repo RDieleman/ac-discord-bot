@@ -31,5 +31,14 @@ namespace Storage.Convertors
             return discordId;
         }
 
+        public Clan DataClanToClan(DataClan clan)
+        {
+            var serverId = StringDiscordIdToUlongDiscordId(clan.discord_server_id);
+            var commandChannelId = StringDiscordIdToUlongDiscordId(clan.discord_command_channel_id);
+
+            //todo: add notification channel id once added to the db
+            return new Clan(clan.id, serverId, clan.prefix, commandChannelId, commandChannelId);
+        }
+
     }
 }

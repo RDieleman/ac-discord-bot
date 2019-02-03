@@ -10,15 +10,17 @@ namespace Core.Entities
         public string Prefix { get; }
         public ulong NotificationChannelId { get; }
         public ulong CommandChannelId { get; }
+        public ulong CommandRoleId { get; }
 
 
-        public Clan(int id, ulong guildId, string prefix, ulong notificationChannelId, ulong commandChannelId)
+        public Clan(int id, ulong guildId, string prefix, ulong notificationChannelId, ulong commandChannelId, ulong commandRoleId)
         {
             Id = id;
             GuildId = guildId;
             Prefix = !string.IsNullOrWhiteSpace(prefix) ? prefix : "!";
             NotificationChannelId = notificationChannelId; //todo: add field to database
             CommandChannelId = commandChannelId;
+            CommandRoleId = commandRoleId;
         }
     }
 }

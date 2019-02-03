@@ -121,7 +121,34 @@ namespace Discord
             {
                 var embed = new BotEmbed();
                 embed.Description = "You can't use commands in this channel.";
-                _= SendAndDeleteMessageAsync(msg.ChannelId, "", embed);
+                _ = SendAndDeleteMessageAsync(msg.ChannelId, "", embed);
+                _ = DeleteMessageAsync(_entityConvertor.DiscordMessageToBotMessage(msg));
+                return Task.FromResult(-1);
+            }
+
+            var guild = msg.Channel.Guild;
+
+            var commandRole = guild.GetRole(clan.CommandRoleId);
+            var member = msg.Author as DiscordMember;
+
+            if (member == null) return Task.FromResult(-1);
+
+            var allowed = false;
+
+            foreach (var discordRole in member.Roles)
+            {
+                if (discordRole.Position >= commandRole.Position)
+                {
+                    allowed = true;
+                    break;
+                }
+            }
+
+            if (!allowed)
+            {
+                var embed = new BotEmbed();
+                embed.Description = "You don't have permission to use commands.";
+                _ = SendAndDeleteMessageAsync(msg.ChannelId, "", embed);
                 _ = DeleteMessageAsync(_entityConvertor.DiscordMessageToBotMessage(msg));
                 return Task.FromResult(-1);
             }

@@ -135,8 +135,9 @@ namespace Discord.CommandModules
                 }
 
                 var embed = new BotEmbed();
-                embed.Author = new BotAuthor(name: @event.Name);
-                embed.Description = $"► Id: `{@event.Id}`{Environment.NewLine}" +
+                embed.Author = new BotAuthor(name: "Event attendance tracked");
+                embed.Description = $"► Name: `{@event.Name}`{Environment.NewLine}" +
+                                    $"► Host: `{@event.LeaderName}`{Environment.NewLine}" +
                                     $"► Attendees: `{botMembers.Count}`{Environment.NewLine}" +
                                     $"► Tracked by: {leader.Mention}";
 

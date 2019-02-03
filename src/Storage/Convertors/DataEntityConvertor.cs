@@ -35,9 +35,10 @@ namespace Storage.Convertors
         {
             var serverId = StringDiscordIdToUlongDiscordId(clan.discord_server_id);
             var commandChannelId = StringDiscordIdToUlongDiscordId(clan.discord_command_channel_id);
+            var commandRankId = StringDiscordIdToUlongDiscordId(clan.discord_command_rank_id);
 
             //todo: add notification channel id once added to the db
-            return new Clan(clan.id, serverId, clan.prefix, commandChannelId, commandChannelId);
+            return new Clan(clan.id, serverId, clan.prefix, commandChannelId, commandChannelId, commandRankId);
         }
 
     }

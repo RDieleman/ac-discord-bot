@@ -12,10 +12,12 @@ namespace Core.Services
     public class EventService
     {
         private readonly IEventDataAccess _eventData;
+        private readonly IMemberDataAccess _memberData;
 
-        public EventService(IEventDataAccess eventData)
+        public EventService(IEventDataAccess eventData, IMemberDataAccess memberData)
         {
             _eventData = eventData;
+            _memberData = memberData;
         }
 
         public async Task SetAttendance(int clanId, Event @event, IEnumerable<BotMember> attendees)
@@ -28,7 +30,21 @@ namespace Core.Services
                 attendeesStringIds.Add($"{Convert.ToString(botMember.Id)}"); //todo: fix this once ids get fixed in the database
             }
 
-            await _eventData.TrackAttendance(clanId, @event.Id, attendeesStringIds);
+            var updateCount = await _eventData.TrackAttendance(clanId, @event.Id, attendeesStringIds);
+
+            if (updateCount < attendeesStringIds.Count())
+            {
+                var members = (await _memberData.GetClanMembers(clanId)).ToList();
+                var missingMembers = new List<BotMember>();
+                foreach (var attendee in attendees)
+                {
+                    if(members.FindAll(x => x.DiscordId == attendee.Id).Count < 1)
+                        missingMembers.Add(attendee);
+                }
+
+                if(missingMembers.Count > 0)
+                    throw new AttendanceMembersMissing(missingMembers.AsEnumerable());
+            }
         }
 
         public async Task<IEnumerable<Event>> GetClanEvents(int clanId)

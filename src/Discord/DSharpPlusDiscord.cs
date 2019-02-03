@@ -35,11 +35,11 @@ namespace Discord
 
         private readonly List<ITimer> _timers = new List<ITimer>();
 
-        public DSharpPlusDiscord(IBotConfiguration botConfiguration,  DiscordEntityConvertor entityConvertor, ICalendarDataAccess calendarData, IEventDataAccess eventData, IClanDataAccess clanData)
+        public DSharpPlusDiscord(IBotConfiguration botConfiguration,  DiscordEntityConvertor entityConvertor, DataAccess dataAccess)
         {
             _botConfiguration = botConfiguration;
             _entityConvertor = entityConvertor;
-            _dataAccess = new DataAccess(calendarData, eventData, clanData);
+            _dataAccess = dataAccess;
         }
 
         public async Task RunAsync()
@@ -60,8 +60,8 @@ namespace Discord
                 builder.AddInstance(_entityConvertor);
                 builder.AddInstance(new DateTimeService());
                 builder.AddInstance(new InterviewService(this));
-                builder.AddInstance(new EventService(_dataAccess.EventData));
-                builder.AddInstance(new ClanService(await _dataAccess.ClanData.GetClansAsync(), _dataAccess.ClanData));
+                builder.AddInstance(new EventService(_dataAccess.EventData, _dataAccess.MemberData));
+                builder.AddInstance(new ClanService(await _dataAccess.ClanData.GetClansAsync(), _dataAccess.ClanData, _dataAccess.MemberData));
                 builder.AddInstance(this as IDiscordMessages);
                 builder.AddInstance(this as IDiscordGuilds);
                 builder.AddInstance(this as IDiscordMembers);

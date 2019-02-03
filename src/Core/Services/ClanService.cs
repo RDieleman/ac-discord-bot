@@ -10,11 +10,13 @@ namespace Core.Services
     {
         private readonly IClanDataAccess _clanData;
         private IEnumerable<Clan> _clans;
+        private readonly IMemberDataAccess _memberData;
 
-        public ClanService(IEnumerable<Clan> clans, IClanDataAccess clanData)
+        public ClanService(IEnumerable<Clan> clans, IClanDataAccess clanData, IMemberDataAccess memberData)
         {
             _clans = clans;
             _clanData = clanData;
+            _memberData = memberData;
         }
 
         public Clan GetClan(ulong discordId)
@@ -35,6 +37,11 @@ namespace Core.Services
         public async Task UpdateClans()
         {
             _clans = await _clanData.GetClansAsync();        
+        }
+
+        public async Task<IEnumerable<ClanMember>> GetMembers(int clanId)
+        {
+            return await _memberData.GetClanMembers(clanId);
         }
     }
 }

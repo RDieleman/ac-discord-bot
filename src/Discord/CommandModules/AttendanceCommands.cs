@@ -107,6 +107,8 @@ namespace Discord.CommandModules
                     botMembers.Add(_convertor.DiscordMemberToBotMember(discordMember));
                 }
 
+                var missingAttendees = new List<BotMember>();
+
                 try
                 {
                     await _eventService.SetAttendance(clan.Id, @event, botMembers.AsEnumerable());
@@ -127,6 +129,10 @@ namespace Discord.CommandModules
                     _ = _discordMessages.SendAndDeleteMessageAsync(context.Channel.Id, string.Empty, errorEmbed);
                     return;
                 }
+                catch (AttendanceMembersMissing ex)
+                {
+                    missingAttendees.AddRange(ex.Members);
+                }
 
                 var embed = new BotEmbed();
                 embed.Author = new BotAuthor(name: @event.Name);
@@ -135,6 +141,21 @@ namespace Discord.CommandModules
                                     $"► Tracked by: {leader.Mention}";
 
                 _ = _discordMessages.SendMessageAsync(clan.CommandChannelId, string.Empty, embed);
+
+                if (missingAttendees.Count > 0)
+                {
+                    var missingEmbed = new BotEmbed();
+                    missingEmbed.Author = new BotAuthor(name:"Attendees missing from the clan roster");
+                    var mentions = new List<string>();
+                    foreach (var missingAttendee in missingAttendees)
+                    {
+                        mentions.Add($"► <@{missingAttendee.Id}>");
+                    }
+
+                    missingEmbed.Description = string.Join(Environment.NewLine, mentions);
+
+                    await _discordMessages.SendMessageAsync(clan.CommandChannelId, string.Empty, missingEmbed);
+                }
             }
             catch (ProcessCanceledException)
             {
@@ -150,7 +171,7 @@ namespace Discord.CommandModules
                 var embed = new BotEmbed();
                 embed.Description = "An error occured while processing your command.";
 
-                _ = _discordMessages.SendMessageAsync(context.Message.ChannelId, string.Empty, embed);
+                _ = _discordMessages.SendAndDeleteMessageAsync(context.Message.ChannelId, string.Empty, embed);
             }
         }
     }

@@ -49,6 +49,8 @@ namespace Core.Services
             var calendars = (await GetClanCalendars(clan.Id)).ToList();
             var events = (await _eventService.GetClanEvents(clan.Id)).ToList();
 
+            events = events.OrderBy(x => x.StartDateTime).ToList();
+
             var updateTasks = new List<Task>();
 
             foreach (var calendar in calendars)
@@ -139,8 +141,8 @@ namespace Core.Services
                 foreach (var @event in events)
                 {
 
-                    var startDateTime = @event.StartDateTime.ToUniversalTime().AddHours(utcOffset);
-                    var endDateTime = @event.EndDateTime.ToUniversalTime().AddHours(utcOffset);
+                    var startDateTime = @event.StartDateTime.AddHours(utcOffset);
+                    var endDateTime = @event.EndDateTime.AddHours(utcOffset);
 
                     //add event to day
                     if (dayDate.CompareTo(startDateTime.Date) >= 0 && dayDate.CompareTo(endDateTime.Date) <= 0)
@@ -158,7 +160,7 @@ namespace Core.Services
                 Title = $":calendar_spiral: {calendar.Name.ToUpper()}",
                 Url = new Uri("https://www.rs-ac.com"), //todo: edit this
                 Footer = new BotFooter(
-                    $"Last synched with the clan's calendar on {now.ToString("dddd MMMM d")} at {now.ToString("t")} (UTC{timezone})."),
+                    $"Last synced with the clan's calendar on {now.ToString("dddd MMMM d")} at {now.ToString("t")} (UTC{timezone})."),
                 ColorHex = calendar.ColorHex,
                 Description = FormatCalendar(days, timezone, now)
             };
@@ -230,19 +232,19 @@ namespace Core.Services
 
             if (@event.Allday)
             {
-                return $"All day{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                return $"All day{Environment.NewLine}[{@event.Name}] # {@event.LeaderName}";
             }
             if (@event.StartDateTime.Date.CompareTo(dayDate.Date) < 0)
             {
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"All day{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                    return $"All day{Environment.NewLine}[{@event.Name}] # {@event.LeaderName}";
                 }
                 //ends today
                 else
                 {
-                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name}] # {@event.LeaderName}";
                 }
             }
             else
@@ -250,12 +252,12 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name}] # {@event.LeaderName}";
                 }
                 //ends today
                 else
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name}] # {@event.LeaderName}";
                 }
             }
         }

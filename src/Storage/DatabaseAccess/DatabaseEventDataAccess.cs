@@ -36,7 +36,7 @@ namespace Storage
             var dateTimeMinString = now.Subtract(TimeSpan.FromHours(12)).ToString("yyyy-MM-dd 00:00:00");
             var dateTimeMaxString = now.Add(TimeSpan.FromHours(14)).Add(TimeSpan.FromDays(7)).ToString("yyyy-MM-dd 23:59:59");
 
-            var sql ="SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.clan_id = @ClanId AND ((e.start_date > @minDate AND e.start_date < @maxDate) || (e.end_date > @minDate AND e.end_date < @maxDate))";
+            var sql = "SELECT e.*, u.name FROM events e INNER JOIN users u ON e.user_id = u.id WHERE e.clan_id = @ClanId AND ((e.start_date > @minDate AND e.start_date < @maxDate) OR (e.end_date > @minDate AND e.end_date < @maxDate) OR (e.start_date < @minDate AND e.end_date > @maxDate));";
      
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
@@ -52,7 +52,7 @@ namespace Storage
             return events.AsEnumerable();
         }
 
-        public async Task TrackAttendance(int clanId, int eventId, IEnumerable<string> attendeesIds)
+        public Task<int> TrackAttendance(int clanId, int eventId, IEnumerable<string> attendeesIds)
         {
 
             var sql =
@@ -61,7 +61,8 @@ namespace Storage
 
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
-                connection.Execute(sql, new { ClanId = clanId, EventId = eventId,  Ids = attendeesIds.ToArray()});
+                var count = connection.Execute(sql, new { ClanId = clanId, EventId = eventId,  Ids = attendeesIds.ToArray()});
+                return Task.FromResult(count - 1);
             }
         }
 

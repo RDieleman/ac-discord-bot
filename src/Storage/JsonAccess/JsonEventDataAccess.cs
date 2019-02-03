@@ -57,5 +57,10 @@ namespace Storage.JsonAccess
         {
             throw new System.NotImplementedException();
         }
+
+        Task<int> IEventDataAccess.TrackAttendance(int clanId, int eventId, IEnumerable<string> attendeesStringIds)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

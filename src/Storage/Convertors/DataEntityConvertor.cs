@@ -41,5 +41,11 @@ namespace Storage.Convertors
             return new Clan(clan.id, serverId, clan.prefix, commandChannelId, commandChannelId, commandRankId);
         }
 
+        public ClanMember DataMemberToClanMember(DataMember member)
+        {
+            var discordId = StringDiscordIdToUlongDiscordId(member.discord_id);
+            return new ClanMember(member.id, member.clan_id, member.rsn, discordId);
+        }
+
     }
 }

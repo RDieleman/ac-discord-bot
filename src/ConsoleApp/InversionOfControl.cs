@@ -41,7 +41,7 @@ namespace ConsoleApp
                 c.ForSingletonOf<ICalendarDataAccess>().UseIfNone<DatabaseCalendarDataAccess>();
                 c.ForSingletonOf<IEventDataAccess>().UseIfNone<DatabaseEventDataAccess>();
                 c.ForSingletonOf<IClanDataAccess>().UseIfNone<DatabaseClanDataAccess>();
-
+                c.ForSingletonOf<IMemberDataAccess>().UseIfNone<DatabaseMemberDataAccess>();
             });
         }
 

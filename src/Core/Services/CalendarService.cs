@@ -111,7 +111,7 @@ namespace Core.Services
             }
             else
             {
-                await _discordMessages.EditMessageAsync(new BotMessage(calendar.MessageId, calendar.ChannelId), string.Empty, embed);
+                await _discordMessages.EditMessageAsync(calendar.ChannelId, calendar.MessageId, string.Empty, embed);
             }
         }
 
@@ -230,19 +230,19 @@ namespace Core.Services
 
             if (@event.Allday)
             {
-                return $"All day{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                return $"All day{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
             }
             if (@event.StartDateTime.Date.CompareTo(dayDate.Date) < 0)
             {
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"All day{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"All day{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"Ends at {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
             }
             else
@@ -250,12 +250,12 @@ namespace Core.Services
                 //end in future
                 if (@event.EndDateTime.Date.CompareTo(dayDate.Date) > 0)
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("M")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
                 //ends today
                 else
                 {
-                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Id}] [{@event.Name} - {@event.LeaderName}]";
+                    return $"{@event.StartDateTime.ToString("t")} - {@event.EndDateTime.ToString("t")}{Environment.NewLine}[{@event.Name} - {@event.LeaderName}]";
                 }
             }
         }

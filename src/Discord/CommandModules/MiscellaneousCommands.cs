@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Core.Discord;
 using Core.Entities;
+using Discord.Convertors;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 
@@ -10,10 +12,12 @@ namespace Discord.CommandModules
     public class MiscellaneousCommands
     {
         private readonly IDiscordMessages _discordMessages;
+        private readonly DiscordEntityConvertor _convertor;
 
-        public MiscellaneousCommands(IDiscordMessages discordMessages)
+        public MiscellaneousCommands(IDiscordMessages discordMessages, DiscordEntityConvertor convertor)
         {
             _discordMessages = discordMessages;
+            _convertor = convertor;
         }
 
         [Command("clear")]

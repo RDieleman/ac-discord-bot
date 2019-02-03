@@ -34,7 +34,7 @@ namespace Core.Services
 
         public async Task UpdateClans()
         {
-            _clans = await _clanData.GetClansAsync();
+            _clans = await _clanData.GetClansAsync();        
         }
     }
 }

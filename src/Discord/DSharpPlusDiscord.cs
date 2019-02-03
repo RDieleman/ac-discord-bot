@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord.Convertors;
 using DSharpPlus;
@@ -10,11 +11,14 @@ using Core;
 using Core.Configuration;
 using Core.Discord;
 using Core.Entities;
+using Core.Entities.Interactive;
 using Core.Entities.Timers;
 using Core.Services;
 using Core.Storage;
 using Discord.CommandModules;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
 using Storage;
 
 namespace Discord
@@ -54,7 +58,8 @@ namespace Discord
             using (var builder = new DependencyCollectionBuilder())
             {
                 builder.AddInstance(_entityConvertor);
-                builder.AddInstance(new DateTimeService());              
+                builder.AddInstance(new DateTimeService());
+                builder.AddInstance(new InterviewService(this));
                 builder.AddInstance(new EventService(_dataAccess.EventData));
                 builder.AddInstance(new ClanService(await _dataAccess.ClanData.GetClansAsync(), _dataAccess.ClanData));
                 builder.AddInstance(this as IDiscordMessages);
@@ -98,7 +103,8 @@ namespace Discord
                 EnableMentionPrefix = true,
                 Dependencies = _dependencyCollection,
                 CustomPrefixPredicate = CheckPrefix,
-                EnableDms = false,              
+                EnableDms = false,    
+                CaseSensitive = false
             };
         }
 
@@ -142,6 +148,19 @@ namespace Discord
         {
             var channel = await _discordClient.GetChannelAsync(channelId);
 
+            try
+            {
+                if (embed != null && string.IsNullOrWhiteSpace(embed.ColorHex))
+                {
+                    var bot = await channel.Guild.GetMemberAsync(_discordClient.CurrentUser.Id);
+                    embed.ColorHex = bot.Color.ToString();
+                }
+            }
+            catch
+            {
+                Console.WriteLine("Failed to get bot message color.");
+            }
+
             DiscordEmbed discordEmbed = null;
             if (embed != null)
             {
@@ -162,14 +181,30 @@ namespace Discord
             _= DeleteMessageAsync(msg, delay);
         }
 
-        public async Task EditMessageAsync(BotMessage targetMessage, string message = null, BotEmbed embed = null)
+        public async Task EditMessageAsync(ulong channelId, ulong messageId, string message = null, BotEmbed embed = null)
         {
-            var channel = await _discordClient.GetChannelAsync(targetMessage.ChannelId);
-            var discordMessage = await channel.GetMessageAsync(targetMessage.MessageId);
+            var channel = await _discordClient.GetChannelAsync(channelId);
+
+            var discordMessage = await channel.GetMessageAsync(messageId);
+
+            try
+            {
+                if (embed != null && string.IsNullOrWhiteSpace(embed.ColorHex))
+                {
+                    var bot = await channel.Guild.GetMemberAsync(_discordClient.CurrentUser.Id);
+                    var role = bot.Roles.Last();
+                    embed.ColorHex = role.Color.ToString();
+                }
+            }
+            catch
+            {
+                Console.WriteLine("Failed to get bot message color.");
+            }
 
             DiscordEmbed discordEmbed = null;
             if (embed != null)
                 discordEmbed = _entityConvertor.BotEmbedToDiscordEmbed(embed);
+
 
             await discordMessage.ModifyAsync(message, discordEmbed);
         }
@@ -192,27 +227,82 @@ namespace Discord
             await discordMessage.DeleteAsync();
         }
 
+        public Task<BotMessage> NextMessageAsync(BotCommandContext context,
+            bool fromSourceUser = true,
+            bool inSourceChannel = true,
+            TimeSpan? timeout = null, CancellationToken token = default(CancellationToken))
+        {
+            var criterion = new Criteria<BotMessage>();
+            if (fromSourceUser)
+                criterion.AddCriterion(new EnsureSourceUserCriterion());
+            if (inSourceChannel)
+                criterion.AddCriterion(new EnsureSourceChannelCriterion());
+            return NextMessageAsync(context, criterion, timeout, token);
+            
+        }
+
+        public async Task<BotMessage> NextMessageAsync(BotCommandContext context, ICriterion<BotMessage> criterion,
+            TimeSpan? timeout = null, CancellationToken token = default(CancellationToken))
+        {
+            timeout = timeout ?? TimeSpan.FromSeconds(15);
+
+            var eventTrigger = new TaskCompletionSource<DiscordMessage>();
+            var cancelTrigger = new TaskCompletionSource<bool>();
+
+            token.Register(() => cancelTrigger.SetResult(true));
+
+            async Task _discordClient_MessageCreated(MessageCreateEventArgs e)
+            {
+                var botMessage = _entityConvertor.DiscordMessageToBotMessage(e.Message);
+                var result = await criterion.JudgeAsync(context, botMessage).ConfigureAwait(false);
+                if (result)
+                    eventTrigger.SetResult(e.Message);
+            }
+
+            _discordClient.MessageCreated += _discordClient_MessageCreated;
+
+            var trigger = eventTrigger.Task;
+            var cancel = cancelTrigger.Task;
+            var delay = Task.Delay(timeout.Value);
+            var task = await Task.WhenAny(trigger, delay, cancel).ConfigureAwait(false);
+
+            _discordClient.MessageCreated -= _discordClient_MessageCreated;
+
+            if (task == trigger)
+            {
+                var msg = await trigger.ConfigureAwait(false);
+                return _entityConvertor.DiscordMessageToBotMessage(msg);
+            }
+            else
+                return null;
+        }
+
+        private Task _discordClient_MessageCreated(MessageCreateEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task LeaveGuildAsync(ulong guildId)
         {
             var guild = await _discordClient.GetGuildAsync(guildId);
             await guild.LeaveAsync();
         }
 
-        public async Task<IEnumerable<BotGuild>> GetGuildsAsync()
+        public Task<IEnumerable<BotGuild>> GetGuildsAsync()
         {
             var botGuilds = new List<BotGuild>();
             foreach (var discordGuild in _discordClient.Guilds)
             {
-                botGuilds.Add(await _entityConvertor.DiscordGuildToBotGuild(discordGuild.Value));
+                botGuilds.Add(_entityConvertor.DiscordGuildToBotGuild(discordGuild.Value));
             }
 
-            return botGuilds.AsEnumerable();
+            return Task.FromResult(botGuilds.AsEnumerable());
         }
 
         public async Task<BotGuild> GetGuildAsync(ulong guildId)
         {
             var discordGuild = await _discordClient.GetGuildAsync(guildId);
-            return await _entityConvertor.DiscordGuildToBotGuild(discordGuild);
+            return _entityConvertor.DiscordGuildToBotGuild(discordGuild);
         }
 
         public async Task<BotMember> GetBotGuildMember(ulong guildId, ulong memberId)

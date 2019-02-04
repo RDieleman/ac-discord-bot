@@ -59,8 +59,8 @@ namespace Core.Services
             return events.Where(x =>
                 x.Active && 
                 !x.AttendanceDone &&
-                now.CompareTo(x.EndDateTime.ToUniversalTime()) <= 0 &&
-                now.CompareTo(x.StartDateTime.ToUniversalTime()) >= 0);
+                now.CompareTo(x.EndDateTime) <= 0 &&
+                now.CompareTo(x.StartDateTime) >= 0);
         }
     }
 }

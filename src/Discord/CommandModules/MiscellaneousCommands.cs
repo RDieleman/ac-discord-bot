@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Core.Discord;
 using Core.Entities;
+using Discord.CommandAttributes;
 using Discord.Convertors;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -22,6 +23,7 @@ namespace Discord.CommandModules
 
         [Command("clear")]
         [RequireOwner]
+        [RequireCommandRank]
         public async Task ClearMessages(CommandContext context, int amount)
         {
             try

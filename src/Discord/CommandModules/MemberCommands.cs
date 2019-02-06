@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 using DSharpPlus.CommandsNext.Attributes;
 using System.Threading.Tasks;
 using Core.Discord;
@@ -8,8 +10,10 @@ using Core.Entities;
 using Core.Exceptions;
 using Core.Services;
 using Core.Storage;
+using Discord.CommandAttributes;
 using Discord.Convertors;
 using DSharpPlus.CommandsNext;
+using CooldownBucketType = Discord.CommandAttributes.CooldownBucketType;
 
 namespace Discord.CommandModules
 {
@@ -29,6 +33,8 @@ namespace Discord.CommandModules
         }
 
         [Command("stats")]
+        [CommandAttributes.Cooldown(1, 120, CooldownBucketType.User)]
+        [RequireCommandChannel]
         public async Task GetMemberStats(CommandContext context)
         {
             try
@@ -47,6 +53,14 @@ namespace Discord.CommandModules
 
                 await _discordMessages.SendMessageAsync(context.Channel.Id, string.Empty, statEmbed);
             }
+            catch (CommandLogException ex)
+            {
+                var errorEmbed = new BotEmbed();
+                errorEmbed.Description = $"You'll have to wait `{Math.Ceiling(ex.RemainingDelay.TotalSeconds)}` more seconds before you can use this command.";
+
+                _ = _discordMessages.SendAndDeleteMessageAsync(context.Channel.Id, string.Empty, errorEmbed);
+                return;
+            }
             catch (GuildNotFoundException)
             {
                 var errorEmbed = new BotEmbed();
@@ -58,7 +72,7 @@ namespace Discord.CommandModules
             catch (MemberDataNotFoundException ex)
             {
                 var errorEmbed = new BotEmbed();
-                errorEmbed.Description = $"You data could not be found.{Environment.NewLine}Please contact a moderator to be added to the clan roster.";
+                errorEmbed.Description = $"Your data could not be found.{Environment.NewLine}Please contact a moderator to be added to the clan roster.";
 
                 _ = _discordMessages.SendAndDeleteMessageAsync(context.Channel.Id, string.Empty, errorEmbed);
                 return;

@@ -7,6 +7,7 @@ using Core.Entities;
 using Core.Entities.Interview;
 using Core.Exceptions;
 using Core.Services;
+using Discord.CommandAttributes;
 using Discord.Convertors;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -32,6 +33,7 @@ namespace Discord.CommandModules
         }
 
         [Command("event")]
+        [RequireCommandRank]
         public async Task SetAttendance(CommandContext context)
         {
             //todo: set command permissions
@@ -141,7 +143,7 @@ namespace Discord.CommandModules
                                     $"► Attendees: `{botMembers.Count}`{Environment.NewLine}" +
                                     $"► Tracked by: {leader.Mention}";
 
-                _ = _discordMessages.SendMessageAsync(clan.CommandChannelId, string.Empty, embed);
+                _ = _discordMessages.SendMessageAsync(541295827323453450, string.Empty, embed); //todo: switch after channel id implementation in db
 
                 if (missingAttendees.Count > 0)
                 {
@@ -155,7 +157,7 @@ namespace Discord.CommandModules
 
                     missingEmbed.Description = string.Join(Environment.NewLine, mentions);
 
-                    await _discordMessages.SendMessageAsync(clan.CommandChannelId, string.Empty, missingEmbed);
+                    await _discordMessages.SendMessageAsync(541295827323453450, string.Empty, missingEmbed);//todo: switch after channel id implementation in db
                 }
             }
             catch (ProcessCanceledException)

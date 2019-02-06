@@ -7,6 +7,7 @@ using Core.Discord;
 using Core.Entities;
 using Core.Services;
 using Core.Storage;
+using Discord.CommandAttributes;
 using Discord.Convertors;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -32,6 +33,7 @@ namespace Discord.CommandModules
         }
 
         [Command("update")]
+        [RequireCommandRank]
         public async Task UpdateCalendar(CommandContext context)
         {
             try

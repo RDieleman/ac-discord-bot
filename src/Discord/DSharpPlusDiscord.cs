@@ -15,6 +15,7 @@ using Core.Entities.Interactive;
 using Core.Entities.Timers;
 using Core.Services;
 using Core.Storage;
+using Discord.CommandAttributes;
 using Discord.CommandModules;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -63,9 +64,7 @@ namespace Discord
                 builder.AddInstance(new EventService(_dataAccess.EventData, _dataAccess.MemberData));
                 builder.AddInstance(new ClanService(await _dataAccess.ClanData.GetClansAsync(), _dataAccess.ClanData, _dataAccess.MemberData));
                 builder.AddInstance(new MemberService(_dataAccess.MemberData));
-                builder.AddInstance(this as IDiscordMessages);
-                builder.AddInstance(this as IDiscordGuilds);
-                builder.AddInstance(this as IDiscordMembers);
+                builder.AddInstance(this);
                 _dependencyCollection = builder.Build();
 
                 builder.AddInstance(new CalendarService(this, _dataAccess.CalendarData, _dependencyCollection.GetDependency<ClanService>(), _dependencyCollection.GetDependency<EventService>()));
@@ -106,7 +105,7 @@ namespace Discord
                 Dependencies = _dependencyCollection,
                 CustomPrefixPredicate = CheckPrefix,
                 EnableDms = false,    
-                CaseSensitive = false
+                CaseSensitive = false,               
             };
         }
 
@@ -118,42 +117,6 @@ namespace Discord
             if (clan == null) return Task.FromResult(-1);
             //todo: update clans if clan not found
             if (!msg.Content.StartsWith(clan.Prefix)) return Task.FromResult(-1);
-
-            if (msg.ChannelId != clan.CommandChannelId)
-            {
-                var embed = new BotEmbed();
-                embed.Description = "You can't use commands in this channel.";
-                _ = SendAndDeleteMessageAsync(msg.ChannelId, "", embed);
-                _ = DeleteMessageAsync(_entityConvertor.DiscordMessageToBotMessage(msg));
-                return Task.FromResult(-1);
-            }
-
-            var guild = msg.Channel.Guild;
-
-            var commandRole = guild.GetRole(clan.CommandRoleId);
-            var member = msg.Author as DiscordMember;
-
-            if (member == null) return Task.FromResult(-1);
-
-            var allowed = false;
-
-            foreach (var discordRole in member.Roles)
-            {
-                if (discordRole.Position >= commandRole.Position)
-                {
-                    allowed = true;
-                    break;
-                }
-            }
-
-            if (!allowed)
-            {
-                var embed = new BotEmbed();
-                embed.Description = "You don't have permission to use commands.";
-                _ = SendAndDeleteMessageAsync(msg.ChannelId, "", embed);
-                _ = DeleteMessageAsync(_entityConvertor.DiscordMessageToBotMessage(msg));
-                return Task.FromResult(-1);
-            }
 
             var commandMessage = _entityConvertor.DiscordMessageToBotMessage(msg);
             _ = DeleteMessageAsync(commandMessage, TimeSpan.FromMilliseconds(750));
@@ -169,7 +132,7 @@ namespace Discord
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 LogLevel = LogLevel.Info,
-                UseInternalLogHandler = true
+                UseInternalLogHandler = true                
             };
         }
 

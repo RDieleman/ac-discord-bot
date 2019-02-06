@@ -72,7 +72,7 @@ namespace Core.Services
                     if (!(update.Exception is null))
                     {
                         Console.WriteLine(update.Exception);
-                        _ = _discordMessages.SendMessageAsync(clan.NotificationChannelId, string.Empty, embed);
+                        _ = _discordMessages.SendMessageAsync(460361005600473088, string.Empty, embed); //todo: change after db channel id implementation
                     }
                 }
             }

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Core.Entities;
+using Core.Exceptions;
 using Core.Storage;
 
 namespace Core.Services
@@ -21,12 +22,16 @@ namespace Core.Services
 
         public Clan GetClan(ulong discordId)
         {
-            return _clans.FirstOrDefault(x => x.GuildId == discordId);
+            var clan = _clans.FirstOrDefault(x => x.GuildId == discordId);
+            if(clan == null) throw new GuildNotFoundException();
+            return clan;
         }
 
         public Clan GetClan(int clanId)
         {
-            return _clans.FirstOrDefault(x => x.Id == clanId);
+            var clan = _clans.FirstOrDefault(x => x.Id == clanId);
+            if (clan == null) throw new GuildNotFoundException();
+            return clan;
         }
 
         public IEnumerable<Clan> GetClans()

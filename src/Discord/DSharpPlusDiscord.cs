@@ -62,6 +62,7 @@ namespace Discord
                 builder.AddInstance(new InterviewService(this));
                 builder.AddInstance(new EventService(_dataAccess.EventData, _dataAccess.MemberData));
                 builder.AddInstance(new ClanService(await _dataAccess.ClanData.GetClansAsync(), _dataAccess.ClanData, _dataAccess.MemberData));
+                builder.AddInstance(new MemberService(_dataAccess.MemberData));
                 builder.AddInstance(this as IDiscordMessages);
                 builder.AddInstance(this as IDiscordGuilds);
                 builder.AddInstance(this as IDiscordMembers);
@@ -88,6 +89,7 @@ namespace Discord
             _commandsNextModule.RegisterCommands<CalendarCommands>();
             _commandsNextModule.RegisterCommands<AttendanceCommands>();
             _commandsNextModule.RegisterCommands<MiscellaneousCommands>();
+            _commandsNextModule.RegisterCommands<MemberCommands>();
         }
 
         public void InitializeTimers()

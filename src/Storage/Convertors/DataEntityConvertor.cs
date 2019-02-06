@@ -44,7 +44,7 @@ namespace Storage.Convertors
         public ClanMember DataMemberToClanMember(DataMember member)
         {
             var discordId = StringDiscordIdToUlongDiscordId(member.discord_id);
-            return new ClanMember(member.id, member.clan_id, member.rsn, discordId);
+            return new ClanMember(member.id, member.clan_id, member.rsn, discordId, member.count_events_attended, member.joindate);
         }
 
     }

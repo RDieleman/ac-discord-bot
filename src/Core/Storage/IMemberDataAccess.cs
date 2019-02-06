@@ -7,5 +7,6 @@ namespace Core.Storage
     public interface IMemberDataAccess
     {
         Task<IEnumerable<ClanMember>> GetClanMembers(int clanId);
+        Task<ClanMember> GetClanMember(int clanId, ulong discordId);
     }
 }

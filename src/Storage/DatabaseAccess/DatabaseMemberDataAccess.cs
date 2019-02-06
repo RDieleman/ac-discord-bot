@@ -41,5 +41,24 @@ namespace Storage.DatabaseAccess
 
             return Task.FromResult(members.AsEnumerable());
         }
+
+        public Task<ClanMember> GetClanMember(int clanId, ulong discordId)
+        {
+            var sql = "SELECT * FROM members WHERE clan_id = @ClanId AND discord_id = @DiscId;";
+
+            var dataMembers = new List<DataMember>();
+            using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
+            {
+                dataMembers = connection.Query<DataMember>(sql, new { ClanId = clanId, DiscId = discordId.ToString() }).ToList();
+            }
+
+            var members = new List<ClanMember>();
+            foreach (var dataMember in dataMembers)
+            {
+                members.Add(_convertor.DataMemberToClanMember(dataMember));
+            }
+
+            return Task.FromResult(members.FirstOrDefault());
+        }
     }
 }

@@ -170,7 +170,7 @@ namespace Discord.CommandModules
                 Console.WriteLine(ex);
 
                 var embed = new BotEmbed();
-                embed.Description = "An error occured while processing your command.";
+                embed.Description = $"An error occured while processing your command.{Environment.NewLine}Please try again or contact a moderator if this keeps happening.";
 
                 _ = _discordMessages.SendAndDeleteMessageAsync(context.Message.ChannelId, string.Empty, embed);
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Core.Discord;
@@ -44,7 +45,20 @@ namespace Storage.Convertors
         public ClanMember DataMemberToClanMember(DataMember member)
         {
             var discordId = StringDiscordIdToUlongDiscordId(member.discord_id);
-            return new ClanMember(member.id, member.clan_id, member.rsn, discordId, member.count_events_attended, member.joindate);
+            var ids = member.id_events_attended?.Split(",");
+            var eventIds = new List<int>();
+            if (ids != null)
+            {
+                foreach (var id in ids)
+                {
+                    int.TryParse(id, out var n);
+
+                    if (n > 0) eventIds.Add(n);
+                    else Console.WriteLine(id + " failed tryparse");
+                }
+            }
+
+            return new ClanMember(member.id, member.clan_id, member.rsn, discordId, member.count_events_attended, member.joindate, eventIds);
         }
 
     }

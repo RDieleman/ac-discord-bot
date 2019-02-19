@@ -54,14 +54,15 @@ namespace Storage
 
         public Task<int> TrackAttendance(int clanId, int eventId, IEnumerable<string> attendeesIds)
         {
+            var dateNow = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
             var sql =
-                "UPDATE members SET id_events_attended=concat_ws(',', id_events_attended, @EventId), count_events_attended = count_events_attended + 1 WHERE clan_id = @ClanId AND discord_id IN @Ids;" +
+                "UPDATE members SET id_events_attended=concat_ws(',', id_events_attended, @EventId), count_events_attended = count_events_attended + 1, date_events_attended = @DateNow WHERE clan_id = @ClanId AND discord_id IN @Ids;" +
                 "UPDATE events SET event_tracked = 1 WHERE clan_id = @ClanId AND id = @EventId";
 
             using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
             {
-                var count = connection.Execute(sql, new { ClanId = clanId, EventId = eventId,  Ids = attendeesIds.ToArray()});
+                var count = connection.Execute(sql, new { ClanId = clanId, EventId = eventId,  Ids = attendeesIds.ToArray(), DateNow = dateNow});
                 return Task.FromResult(count - 1);
             }
         }
@@ -81,6 +82,25 @@ namespace Storage
             }
 
             return events.FirstOrDefault();
+        }
+
+        public Task<IReadOnlyList<Event>> GetAllClanEvents(int clanId)
+        {
+            var sql = "SELECT * FROM events WHERE clan_id = @ClanId;";
+
+            var dataEvents = new List<DataEvent>();
+            using (IDbConnection connection = new MySqlConnection(_config.GetConnectionString()))
+            {
+                dataEvents = connection.Query<DataEvent>(sql, new { ClanId = clanId}).ToList();
+            }
+
+            var events = new List<Event>();
+            foreach (var dataEvent in dataEvents)
+            {
+                events.Add(_convertor.DataEventToEvent(dataEvent));
+            }
+
+            return Task.FromResult(events as IReadOnlyList<Event>);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Core.Entities
 {
@@ -10,8 +11,9 @@ namespace Core.Entities
         public ulong DiscordId { get; }
         public int EventCount { get; }
         public DateTime JoinDate { get; }
+        public IReadOnlyList<int> IdEventsAttended { get; }
 
-        public ClanMember(int id, int clanId, string rsn, ulong discordId, int eventCount, DateTime joinDate)
+        public ClanMember(int id, int clanId, string rsn, ulong discordId, int eventCount, DateTime joinDate, IReadOnlyList<int> idEventsAttended)
         {
             Id = id;
             ClanId = clanId;
@@ -19,6 +21,7 @@ namespace Core.Entities
             DiscordId = discordId;
             EventCount = eventCount;
             JoinDate = joinDate;
+            IdEventsAttended = idEventsAttended;
         }
     }
 }

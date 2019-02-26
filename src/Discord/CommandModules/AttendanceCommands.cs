@@ -33,7 +33,7 @@ namespace Discord.CommandModules
         }
 
         [Command("event")]
-        [RequireCommandRank]
+        [RequireEventChannel]        
         public async Task SetAttendance(CommandContext context)
         {
             //todo: set command permissions
